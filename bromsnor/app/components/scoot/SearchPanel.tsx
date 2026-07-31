@@ -9,7 +9,7 @@ import type { Destination } from "./types";
  * <SearchPanel destinations={city.destinations} filter={q}
  *   onFilter={setQ} onPick={plan} status={null} />
  */
-export function SearchPanel({ destinations, filter, onFilter, onPick, onSearch, prefiltered, status }: {
+export function SearchPanel({ destinations, filter, onFilter, onPick, onSearch, prefiltered, empty, status }: {
   destinations: Destination[];
   filter: string;
   onFilter: (v: string) => void;
@@ -21,6 +21,9 @@ export function SearchPanel({ destinations, filter, onFilter, onPick, onSearch, 
   /** Skip the built-in text filter — pass this when `destinations`
       already come from a live search on the current input. */
   prefiltered?: boolean;
+  /** Rendered when the user typed something but the list is empty
+      (e.g. an <EmptyState/>). */
+  empty?: React.ReactNode;
   status?: { text: string; error: boolean } | null;
 }) {
   const list = useMemo(() => {
@@ -62,7 +65,7 @@ export function SearchPanel({ destinations, filter, onFilter, onPick, onSearch, 
             <span><b>Zoek “{filter.trim()}”</b><small>Adres of coördinaten (lat, lng)</small></span>
           </button>
         )}
-        {!list.length && filter.trim() && !onSearch ? <p className="hint">Geen locatie gevonden. Of tik op de kaart.</p> : null}
+        {!list.length && filter.trim() ? (empty ?? (!onSearch && <p className="hint">Geen locatie gevonden. Of tik op de kaart.</p>)) : null}
       </div>
       {status && <p className={"hint" + (status.error ? " error" : "")} aria-live="polite">{status.text}</p>}
       <p className="hint">Of tik op de kaart om een bestemming te kiezen.</p>

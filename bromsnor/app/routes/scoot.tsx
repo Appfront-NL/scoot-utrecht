@@ -25,6 +25,7 @@ import {
   OnboardingFlow, RulesScreen, ProfileStack,
   TopBar, FloatStack, NavBanner, DemoSpeed, Toast,
   SearchPanel, RouteOverview, RouteCalc, RideBar, ArrivedPanel,
+  ConfirmDialog, EmptyState, Coachmark, type DirectionStep,
   LayersSheet, ZoneDetail, WindowExplorer, StreetLookup,
   type BannerState, type Destination, type LayerState, type ZoneProps,
 } from "~/components/scoot";
@@ -68,6 +69,9 @@ export default function Scoot() {
   const [status, setStatus] = useState<{ text: string; error: boolean } | null>(null);
   const [destination, setDestination] = useState<Destination | null>(null);
   const [route, setRoute] = useState<any>(null);
+  const [routeSteps, setRouteSteps] = useState<DirectionStep[] | null>(null);
+  const [confirmStop, setConfirmStop] = useState(false);
+  const [coach, setCoach] = useState(false);
   const [calc, setCalc] = useState({ step: 0, street: null as string | null });
   const [banner, setBanner] = useState<BannerState | null>(null);
   const [ride, setRide] = useState({ time: "–", distance: "–", arrival: "–", almost: false });
@@ -157,6 +161,11 @@ export default function Scoot() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // First-visit coachmark pointing at the layers button.
+  useEffect(() => {
+    if (phase === "app" && !localStorage.getItem("scoot.coachmark")) setCoach(true);
+  }, [phase]);
+
   const openZone = useCallback((props: ZoneProps) => {
     if (panelRef.current === "ride") return;
     setZoneDetail(props);
@@ -222,6 +231,16 @@ export default function Scoot() {
 
     try {
       setRoute(r);
+      // turn-by-turn preview for the overview panel
+      try {
+        const { maneuvers } = buildManeuvers(r.route.coordinates, r.straten);
+        let prev = 0;
+        setRouteSteps(maneuvers.map((m: any) => {
+          const step = { kind: m.direction, label: m.label, street: m.street, distanceM: Math.max(0, m.atMeter - prev) };
+          prev = m.atMeter;
+          return step;
+        }));
+      } catch { setRouteSteps(null); }
       setCalc({ step: 3, street: r.straten?.[0] ?? null });
       const map = mapRef.current;
       map.drawRoute(r.route);
@@ -407,6 +426,12 @@ export default function Scoot() {
               destinations={suggestions} prefiltered
               filter={filter} onFilter={(v) => { setFilter(v); setStatus(null); }}
               onPick={plan} onSearch={searchFree} status={status}
+              empty={filter.trim().length >= 3 ? (
+                <EmptyState
+                  title="Niets gevonden"
+                  body="We kennen deze plek nog niet. Zoek met de knop hierboven, probeer een andere naam, of tik op de kaart."
+                />
+              ) : undefined}
             />
           )}
           {!sheet && panel === "calc" && (
@@ -418,11 +443,32 @@ export default function Scoot() {
               distance={fmtDistance(route.afstand_m)}
               duration={fmtDuration(route.duur_s)}
               warnings={route.waarschuwingen.length}
+              steps={routeSteps ?? undefined}
               onBack={() => { mapRef.current.clearRoute(); setPanel("search"); }}
               onStart={() => startRide()}
             />
           )}
-          {!sheet && panel === "ride" && <RideBar {...ride} onStop={endRide} />}
+          {!sheet && panel === "ride" && <RideBar {...ride} onStop={() => setConfirmStop(true)} />}
+
+          <ConfirmDialog
+            open={confirmStop}
+            title="Rit stoppen?"
+            body="Je route wordt niet bewaard en de zonewaarschuwingen stoppen ook."
+            confirmLabel="Ja, stoppen"
+            cancelLabel="Doorrijden"
+            onConfirm={() => { setConfirmStop(false); endRide(); }}
+            onCancel={() => setConfirmStop(false)}
+          />
+          {coach && panel === "search" && !sheet && (
+            <Coachmark
+              title="Zet lagen aan of uit"
+              body="Kies hier welke regels je op de kaart ziet: verboden zones, rijbaan-delen en venstertijden."
+              counter="1 van 1"
+              arrow="right"
+              style={{ right: 72, top: "38%" }}
+              onDone={() => { setCoach(false); localStorage.setItem("scoot.coachmark", "1"); }}
+            />
+          )}
           {!sheet && panel === "done" && destination && route && (
             <ArrivedPanel
               destination={destination.name} city={city.name}

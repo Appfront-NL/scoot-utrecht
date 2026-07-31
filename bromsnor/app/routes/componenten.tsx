@@ -15,6 +15,7 @@ import {
   AchievementsScreen, RuleChangesScreen, OfflineMapScreen,
   Warning,
   AnimateIn, CountUp, PulseDot, RouteLoader, SuccessCheck, Shake,
+  RegimeChip, TimeWindowBar, SourceLink, DirectionList, ConfirmDialog, EmptyState, Coachmark,
   type Destination, type LayerState,
 } from "~/components/scoot";
 
@@ -92,6 +93,8 @@ export default function Componenten() {
   const [kaal, setKaal] = useState(0); // demo-teller RouteCalc
   const [vehicle, setVehicle] = useState("snorfiets");
   const [replay, setReplay] = useState(0);     // demo: animaties opnieuw
+  const [dlg, setDlg] = useState(false);
+  const [mark, setMark] = useState(false);
   const [shakeCount, setShakeCount] = useState(0);
 
   return (
@@ -138,6 +141,30 @@ export default function Componenten() {
             <code>pulseDotHTML()</code> geeft dezelfde dot als HTML-string, voor een Leaflet{" "}
             <code>divIcon</code> — zie het JSDoc-voorbeeld in <code>PulseDot.tsx</code>.
           </p>
+        </div>
+      </Blok>
+
+      <Blok titel="Aanvulling — RegimeChip / TimeWindowBar / SourceLink / DirectionList / EmptyState / ConfirmDialog / Coachmark" imp={`import { RegimeChip, TimeWindowBar, SourceLink, DirectionList, ConfirmDialog, EmptyState, Coachmark } from "~/components/scoot"`}>
+        <div style={{ display: "grid", gap: 14 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <RegimeChip regime="verboden" />
+            <RegimeChip regime="rijbaan" />
+            <RegimeChip regime="fietspad" />
+          </div>
+          <TimeWindowBar from="11:00" to="18:00" now="14:20" />
+          <SourceLink sub="Gemeenteblad nr. 213902" onClick={() => show("Opent het Gemeenteblad")} />
+          <DirectionList steps={[
+            { kind: "right", label: "Rechtsaf", street: "Lange Nieuwstraat", distanceM: 575 },
+            { kind: "left", label: "Linksaf", street: "Oudegracht", distanceM: 551 },
+            { kind: "arrival", label: "Aankomst", street: "Domplein", distanceM: 276 },
+          ]} />
+          <EmptyState title="Niets gevonden" body="We konden deze plek niet vinden. Probeer een andere zoekterm." actionLabel="Zoek opnieuw" onAction={() => show("Opnieuw!")} />
+          <div style={{ display: "flex", gap: 8 }}>
+            <button style={demoKnop} onClick={() => setDlg(true)}>Open ConfirmDialog</button>
+            <button style={demoKnop} onClick={() => setMark(true)}>Toon Coachmark</button>
+          </div>
+          <ConfirmDialog open={dlg} title="Rit stoppen?" body="Je route wordt niet bewaard en de zonewaarschuwingen stoppen ook." confirmLabel="Ja, stoppen" cancelLabel="Doorrijden" onConfirm={() => { setDlg(false); show("Gestopt"); }} onCancel={() => setDlg(false)} />
+          {mark && <Coachmark title="Zet lagen aan of uit" body="Kies welke regels je op de kaart ziet." counter="1 van 1" arrow="right" style={{ right: 40, top: "30%" }} onDone={() => setMark(false)} />}
         </div>
       </Blok>
 

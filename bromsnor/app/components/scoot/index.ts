@@ -65,3 +65,12 @@ export { PulseDot, pulseDotHTML } from "./animations/PulseDot";
 export { RouteLoader } from "./animations/RouteLoader";
 export { SuccessCheck } from "./animations/SuccessCheck";
 export { Shake } from "./animations/Shake";
+
+// aanvulling op de kit (Figma-canvas 'Componenten — aanvulling')
+export { RegimeChip } from "./RegimeChip";
+export { TimeWindowBar } from "./TimeWindowBar";
+export { SourceLink } from "./SourceLink";
+export { DirectionList, type DirectionStep } from "./DirectionList";
+export { ConfirmDialog } from "./ConfirmDialog";
+export { EmptyState } from "./EmptyState";
+export { Coachmark } from "./Coachmark";

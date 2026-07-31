@@ -1,4 +1,7 @@
 import type { ZoneProps } from "./types";
+import { RegimeChip } from "./RegimeChip";
+import { TimeWindowBar } from "./TimeWindowBar";
+import { SourceLink } from "./SourceLink";
 
 /**
  * Zone-detail sheet (design 26): regime badge, description, live
@@ -25,25 +28,27 @@ export function ZoneDetail({ zone, onClose, onDecree }: {
   return (
     <section className="panel sheet">
       <button className="grab" aria-label="Sluiten" onClick={onClose} />
-      <span className={"zone-badge " + info.cls}>{info.badge}</span>
+      <RegimeChip regime={regime as "verboden" | "rijbaan" | "fietspad"} />
       <h2 className="panel-title">{zone.naam ?? "Zone"}</h2>
       <p className="sheet-sub">{info.desc(zone.voertuig ?? "scooter", !!venster)}</p>
-      {venster && (
-        <div className="zd-window">
-          <b>{venster.replace(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/, "$1 tot $2")}</b>
-          <span>{windowStatusLine(venster)}</span>
-        </div>
-      )}
+      {venster && (() => {
+        const m = venster.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
+        return (
+          <div style={{ display: "grid", gap: 6, margin: "2px 0 12px" }}>
+            {m && <TimeWindowBar from={m[1]} to={m[2]} />}
+            <small style={{ color: "#64748b", font: "400 12.5px 'DM Sans'" }}>{windowStatusLine(venster)}</small>
+          </div>
+        );
+      })()}
       <dl className="zd-facts">
         <div><dt>Voertuig</dt><dd>{cap(zone.voertuig ?? "–")}</dd></div>
         <div><dt>Geldig vanaf</dt><dd>{fmtDateNl(zone.geldig_vanaf)}</dd></div>
         <div><dt>Zekerheid</dt><dd>{zone.zekerheid === "hard" ? "Hard, letterlijk in het besluit" : "Zacht, afgeleid uit de tekst"}</dd></div>
         <div><dt>Bron</dt><dd>{zone.bron === "mock" ? "Gemeenteblad (demo)" : zone.bron ?? "–"}</dd></div>
       </dl>
-      <button className="zd-link" onClick={onDecree}>
-        <svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7Z" /><path d="M14 2v5h5" /></svg>
-        Lees het verkeersbesluit
-      </button>
+      <div style={{ marginTop: 10 }}>
+        <SourceLink sub={zone.bron === "mock" ? "Gemeenteblad (demo)" : zone.bron ?? undefined} onClick={onDecree} />
+      </div>
     </section>
   );
 }
