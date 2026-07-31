@@ -20,6 +20,7 @@
  */
 
 import type { ReactNode } from "react";
+import { useNavigate } from "react-router";
 
 const icon = (paths: ReactNode, size = 20) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths}</svg>
@@ -133,4 +134,22 @@ export function AccountScreen({
       </div>
     </section>
   );
+}
+
+/* ---------- route-module exports, same pattern as SettingsScreen:
+   the screen is also reachable as a standalone page. ---------- */
+export async function loader() {
+  return null;
+}
+
+export default function AccountPage() {
+  const navigate = useNavigate();
+  return <AccountScreen
+      onBack={() => navigate("/")}
+      onRideHistory={() => navigate("/rides")}
+      onSettings={() => navigate("/settings")}
+      onAchievements={() => navigate("/achievements")}
+      onRuleChanges={() => navigate("/rule-changes")}
+      onOfflineMap={() => navigate("/offline-map")}
+    />;
 }

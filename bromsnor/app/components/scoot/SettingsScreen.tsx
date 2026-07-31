@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router";
 
 export async function loader() {
   return null;
@@ -189,5 +190,6 @@ export function SettingsScreen({
 }
 
 export default function SettingsPage() {
-  return <SettingsScreen />;
+  const navigate = useNavigate();
+  return <SettingsScreen onBack={() => navigate(-1)} />;
 }

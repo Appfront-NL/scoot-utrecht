@@ -13,6 +13,7 @@
  */
 
 import type { ReactNode } from "react";
+import { useNavigate } from "react-router";
 
 const icon = (paths: ReactNode, size = 20) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths}</svg>
@@ -110,4 +111,15 @@ export function AchievementsScreen({ open = true, zIndex, onBack }: Achievements
       </div>
     </section>
   );
+}
+
+/* ---------- route-module exports, same pattern as SettingsScreen:
+   the screen is also reachable as a standalone page. ---------- */
+export async function loader() {
+  return null;
+}
+
+export default function AchievementsPage() {
+  const navigate = useNavigate();
+  return <AchievementsScreen onBack={() => navigate(-1)} />;
 }

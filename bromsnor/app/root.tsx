@@ -13,6 +13,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import "./styles/scoot.css";
 import "./styles/wrapped.css";
 import "./styles/profile.css";
+import { ProfileFab } from "./components/scoot/ProfileFab";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -49,7 +50,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <>
+      <Outlet />
+      {/* Floating nav to the profile pages; renders only on the
+          map screens (see ProfileFab.SHOW_ON). */}
+      <ProfileFab />
+    </>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

@@ -15,6 +15,8 @@
  * />
  */
 
+import { useNavigate } from "react-router";
+
 const backIcon = (
   <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
 );
@@ -99,4 +101,15 @@ export function NotificationsScreen({
       </div>
     </section>
   );
+}
+
+/* ---------- route-module exports, same pattern as SettingsScreen:
+   the screen is also reachable as a standalone page. ---------- */
+export async function loader() {
+  return null;
+}
+
+export default function NotificationsPage() {
+  const navigate = useNavigate();
+  return <NotificationsScreen onBack={() => navigate(-1)} />;
 }
