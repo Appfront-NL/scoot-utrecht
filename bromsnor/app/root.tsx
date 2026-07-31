@@ -9,6 +9,10 @@ import {
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import "maplibre-gl/dist/maplibre-gl.css";
+import "./styles/scoot.css";
+import "./styles/wrapped.css";
+import "./styles/profile.css";
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -19,13 +23,13 @@ export const links: Route.LinksFunction = () => [
   },
   {
     rel: "stylesheet",
-    href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
+    href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap",
   },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="nl">
       <head>
         <meta charSet="utf-8" />
         <meta

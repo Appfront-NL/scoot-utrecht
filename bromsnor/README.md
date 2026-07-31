@@ -1,3 +1,25 @@
+# bromsnor — SCOOT in React
+
+De SCOOT-frontend als React Router-app. Structuur:
+
+- `app/routes/home.tsx` — de app: React bezit de UI-state-machine
+  (onboarding → zoeken → route → rijden → aangekomen + sheets)
+- `app/components/` — presentational components (onboarding, chrome,
+  panels/sheets), styling via de bestaande SCOOT-css
+- `app/lib/` — de geteste vanilla-modules, ongewijzigd overgenomen:
+  `api.js` (contract-client + mock, zie /CONTRACT.md), `map.js`
+  (alle MapLibre), `navigation.js` (manoeuvres + simulatie),
+  `cities.js` (stedenregister), `warning-card.js` (losse
+  <scoot-warning> web component), `wrapped.js`, `profile.js`
+- `app/styles/` — het SCOOT-designsysteem (scoot.css) + module-css
+- `public/mock/` — regeldata-GeoJSON (spoor C-schema)
+
+Backend koppelen = één regel in `app/lib/config.js` (`apiBase`).
+Browser-only zaken (kaart, custom elements, overlays) laden client-side
+in effects, dus SSR blijft gewoon werken.
+
+---
+
 # Welcome to React Router!
 
 A modern, production-ready template for building full-stack React applications using React Router.

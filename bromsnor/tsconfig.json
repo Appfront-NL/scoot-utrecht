@@ -33,6 +33,8 @@
     "noEmit": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "strict": true
+    "strict": true,
+    "allowJs": true,
+    "checkJs": false
   }
 }

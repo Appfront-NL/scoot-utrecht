@@ -421,15 +421,7 @@ async function saveShareImage() {
 /* ---------- stylesheet ---------- */
 
 function ensureStylesheet() {
-  // In a bundler (Vite/bromsnor) the host imports wrapped.css itself;
-  // the auto-inject below only serves the no-build vanilla app.
-  if (document.querySelector('link[href*="wrapped.css"], style[data-scoot-wrapped]')) return;
-  try {
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = new URL("../css/wrapped.css", import.meta.url).href;
-    document.head.appendChild(link);
-  } catch { /* bundled build: stylesheet is imported by the host */ }
+  // bromsnor: the stylesheet is imported by root.tsx via Vite — no-op.
 }
 
 /* ---------- public API ---------- */

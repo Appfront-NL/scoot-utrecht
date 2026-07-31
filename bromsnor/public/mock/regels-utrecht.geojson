@@ -1,0 +1,122 @@
+{
+  "type": "FeatureCollection",
+  "_toelichting": "Mock-regels voor Scoot, gebied Utrecht-centrum. Dit is het uitwisselformaat tussen spoor C (output) en spoor B (input). Verzonnen data. Voeg zelf gemene gevallen toe op geojson.io.",
+  "_contract": {
+    "voertuig": "voor welk voertuig geldt de regel, bv. snorfiets",
+    "regime": "rijbaan | fietspad | verboden",
+    "tijdvenster": "string of null, bv. 'ma-za 11:00-18:00'",
+    "geldig_vanaf": "ISO-datum of null",
+    "zekerheid": "hard | afgeleid | onzeker",
+    "bron": "waar komt deze regel vandaan"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "R1",
+        "naam": "Voetgangersgebied Vredenburg",
+        "voertuig": "snorfiets",
+        "regime": "verboden",
+        "tijdvenster": null,
+        "geldig_vanaf": "2025-01-01",
+        "zekerheid": "hard",
+        "bron": "mock"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [5.1155, 52.0918],
+          [5.1188, 52.0918],
+          [5.1188, 52.0902],
+          [5.1155, 52.0902],
+          [5.1155, 52.0918]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "R2",
+        "naam": "Croeselaan - snorfiets naar de rijbaan",
+        "voertuig": "snorfiets",
+        "regime": "rijbaan",
+        "tijdvenster": null,
+        "geldig_vanaf": "2026-09-01",
+        "zekerheid": "hard",
+        "bron": "mock"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [5.1092, 52.0885],
+          [5.1101, 52.0868],
+          [5.1108, 52.0851]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "R3",
+        "naam": "Marktstraat - alleen buiten venstertijd",
+        "voertuig": "snorfiets",
+        "regime": "verboden",
+        "tijdvenster": "ma-za 11:00-18:00",
+        "geldig_vanaf": "2026-06-04",
+        "zekerheid": "hard",
+        "bron": "mock"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [5.1210, 52.0930],
+          [5.1228, 52.0930],
+          [5.1228, 52.0922],
+          [5.1210, 52.0922],
+          [5.1210, 52.0930]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "R4",
+        "naam": "Vleutenseweg-fietspad - regime onduidelijk",
+        "voertuig": "snorfiets",
+        "regime": "fietspad",
+        "tijdvenster": null,
+        "geldig_vanaf": null,
+        "zekerheid": "onzeker",
+        "bron": "mock"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [5.0995, 52.0928],
+          [5.1030, 52.0925],
+          [5.1065, 52.0922]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "R5",
+        "naam": "Nachtegaalstraat - eenrichting, snorfiets niet uitgezonderd",
+        "voertuig": "snorfiets",
+        "regime": "verboden",
+        "tijdvenster": null,
+        "geldig_vanaf": "2024-03-01",
+        "zekerheid": "afgeleid",
+        "bron": "mock"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [5.1265, 52.0875],
+          [5.1288, 52.0870]
+        ]
+      }
+    }
+  ]
+}
