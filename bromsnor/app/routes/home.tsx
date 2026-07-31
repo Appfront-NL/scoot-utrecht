@@ -1,327 +1,222 @@
-// ============================================================
-// SCOOT — the app route. React owns the UI state machine;
-// the proven modules in app/lib own the map, the simulation and
-// the contract (see /CONTRACT.md in the repo root).
-//
-// Everything that touches the browser (MapLibre, custom elements,
-// the wrapped/profile overlays) loads client-side in effects, so
-// SSR stays intact.
-// ============================================================
+import "leaflet/dist/leaflet.css";
+import { MapPin, Scooter } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import MapControls from "~/components/map-controls";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+const TOMTOM_KEY = "dwpTmdTaUwbmhSEGpbxbrT0L0E71O9aX";
 
-// pure modules: safe on the server
-import { CONFIG } from "~/lib/config.js";
-import { CITIES, cityFor } from "~/lib/cities.js";
-import { fetchRoute } from "~/lib/api.js";
-import { buildManeuvers, startSimulation, fmtDistance, fmtDuration, fmtArrival } from "~/lib/navigation.js";
+export default function Map() {
+  const mapRef = useRef<HTMLDivElement | null>(null);
+  const leafletRef = useRef<any>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const routeLayerRef = useRef<any>(null);
+  const startMarkerRef = useRef<any>(null);
+  const endMarkerRef = useRef<any>(null);
 
-import {
-  OnboardingFlow, RulesScreen, ProfileStack,
-  TopBar, FloatStack, NavBanner, DemoSpeed, Toast,
-  SearchPanel, RouteOverview, RouteCalc, RideBar, ArrivedPanel,
-  LayersSheet, ZoneDetail, WindowExplorer, StreetLookup,
-  type BannerState, type Destination, type LayerState, type ZoneProps,
-} from "~/components/scoot";
-
-export function meta() {
-  return [
-    { title: "SCOOT — veilig rijden in Utrecht" },
-    { name: "description", content: "Deelscooter-navigatie die je om verboden zones heen leidt." },
+  const forbiddenZonesBoundingBoxes = [
+    {
+      minLat: 52.0907,
+      maxLat: 52.0917,
+      minLng: 5.1214,
+      maxLng: 5.1224,
+    },
   ];
-}
 
-type Phase = "boot" | "onboarding" | "app";
-type Panel = "search" | "overview" | "ride" | "done" | "calc";
-type Sheet = null | "layers" | "window" | "street" | "zone";
+  const [from, setFrom] = useState("Westerdoksdijk 599, 1013 BX Amsterdam");
+  const [to, setTo] = useState("");
+  const [routeError, setRouteError] = useState<string | null>(null);
 
-const ONBOARDED_KEY = "scoot.onboarded";
-const VEHICLE_KEY = "scoot.vehicle";
-
-export default function Home() {
-  const city = (CITIES as Record<string, any>)[CONFIG.defaultCity];
-
-  /* ---------- state ---------- */
-  const [phase, setPhase] = useState<Phase>("boot");
-  const [panel, setPanel] = useState<Panel>("search");
-  const [sheet, setSheet] = useState<Sheet>(null);
-  const [rulesOverlay, setRulesOverlay] = useState(false);   // i-button reference view
-  const [filter, setFilter] = useState("");
-  const [status, setStatus] = useState<{ text: string; error: boolean } | null>(null);
-  const [destination, setDestination] = useState<Destination | null>(null);
-  const [route, setRoute] = useState<any>(null);
-  const [calc, setCalc] = useState({ step: 0, street: null as string | null });
-  const [banner, setBanner] = useState<BannerState | null>(null);
-  const [ride, setRide] = useState({ time: "–", distance: "–", arrival: "–", almost: false });
-  const [layers, setLayers] = useState<LayerState>({ verboden: true, rijbaan: true, fietspad: true, venstertijd: true });
-  const [zoneDetail, setZoneDetail] = useState<ZoneProps | null>(null);
-  const [windowHour, setWindowHour] = useState(14.33);
-  const [toast, setToast] = useState<string | null>(null);
-  const [unread, setUnread] = useState(true);
-  const [profileView, setProfileView] = useState<null | "account" | "notifications">(null);
-  const [factor, setFactor] = useState(8);
-  const [soundOn, setSoundOn] = useState(true);
-
-  /* ---------- refs to imperative modules ---------- */
-  const mapRef = useRef<any>(null);          // app/lib/map.js namespace
-  const warnRef = useRef<any>(null);         // warning-card helpers
-  const wrappedRef = useRef<any>(null);
-  const simRef = useRef<any>(null);
-  const startRef = useRef<[number, number]>(city.start as [number, number]);
-  const vehicleRef = useRef("snorfiets");
-  const lastStepRef = useRef<any>(null);
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const showToast = useCallback((text: string) => {
-    setToast(text);
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(null), 2600);
-  }, []);
-
-  /* ---------- refs mirroring state for module callbacks ---------- */
-  const panelRef = useRef(panel); panelRef.current = panel;
-  const sheetRef = useRef(sheet); sheetRef.current = sheet;
-
-  /* ---------- boot: client-only modules + map ---------- */
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      vehicleRef.current = localStorage.getItem(VEHICLE_KEY) || "snorfiets";
-      setPhase(localStorage.getItem(ONBOARDED_KEY) ? "app" : "onboarding");
+    const initMap = async () => {
+      if (!mapRef.current || !TOMTOM_KEY) return;
 
-      const [map, warn, wrapped] = await Promise.all([
-        import("~/lib/map.js"),
-        import("~/lib/warning-card.js"),
-        import("~/lib/wrapped.js"),
-      ]);
-      if (cancelled) return;
-      mapRef.current = map;
-      warnRef.current = warn;
-      wrappedRef.current = wrapped;
+      const L = (await import("leaflet")).default;
+      leafletRef.current = L;
 
-      wrapped.initWrapped();
+      mapInstanceRef.current = L.map(mapRef.current).setView(
+        [52.0907, 5.1214],
+        13,
+      );
 
-      await map.initMap(city.center);
-      if (cancelled) return;
-      map.setRider(startRef.current, 0);
-      try {
-        const { loadRules } = await import("~/lib/api.js");
-        map.drawZones(await loadRules(city.rulesUrl));
-      } catch (e) {
-        console.warn("Zones niet geladen:", e);
-      }
-      map.onZoneClick((props: ZoneProps) => openZone(props));
-      map.onMapClick((point: [number, number], screenPoint: unknown) => onMapTap(point, screenPoint));
+      L.tileLayer(
+        `https://{s}.api.tomtom.com/map/1/tile/basic/main/{z}/{x}/{y}.png?key=${TOMTOM_KEY}`,
+        {
+          subdomains: ["a", "b", "c", "d"],
+          maxZoom: 20,
+          tileSize: 256,
+        },
+      ).addTo(mapInstanceRef.current);
 
-      // shareable URL: #eind=lon,lat&naam=…
-      const p = new URLSearchParams(location.hash.slice(1));
-      const eind = p.get("eind")?.split(",").map(Number);
-      if (eind && eind.length === 2 && !eind.some(isNaN)) {
-        plan({ name: p.get("naam") || "Gedeelde bestemming", area: "Via link", point: eind as [number, number] });
-      }
-
-      // Geolocation start point, but only inside a known city
-      // (cities.js): outside the dataset the demo start stays.
-      if ("geolocation" in navigator) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            if (cancelled) return;
-            const here: [number, number] = [pos.coords.longitude, pos.coords.latitude];
-            if (!cityFor(here)) return;
-            startRef.current = here;
-            map.setRider(here, 0);
-            if (panelRef.current === "search") map.overviewCamera(here);
+      forbiddenZonesBoundingBoxes.forEach((zone) => {
+        L.rectangle(
+          [
+            [zone.minLat, zone.minLng],
+            [zone.maxLat, zone.maxLng],
+          ],
+          {
+            color: "#DC2626",
+            weight: 2,
+            fillColor: "#DC2626",
+            fillOpacity: 0.2,
           },
-          () => { /* denied or unavailable: fallback stays */ },
-          { timeout: 5000, maximumAge: 60000 },
-        );
+        ).addTo(mapInstanceRef.current);
+      });
+    };
+
+    void initMap();
+
+    return () => {
+      if (mapInstanceRef.current) mapInstanceRef.current.remove();
+      mapInstanceRef.current = null;
+      startMarkerRef.current = null;
+      endMarkerRef.current = null;
+    };
+  }, []);
+
+  const parseLatLng = (value: string) => {
+    const [latStr, lngStr] = value.split(",").map((s) => s.trim());
+    const lat = Number(latStr);
+    const lng = Number(lngStr);
+
+    if (
+      Number.isNaN(lat) ||
+      Number.isNaN(lng) ||
+      lat < -90 ||
+      lat > 90 ||
+      lng < -180 ||
+      lng > 180
+    ) {
+      return null;
+    }
+
+    return { lat, lng };
+  };
+
+  const geocodeAddress = async (query: string) => {
+    const encodedQuery = encodeURIComponent(query.trim());
+    if (!encodedQuery) return null;
+
+    const url = `https://api.tomtom.com/search/2/geocode/${encodedQuery}.json?key=${TOMTOM_KEY}&limit=1`;
+
+    const response = await fetch(url);
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const position = data?.results?.[0]?.position;
+
+    if (!position) return null;
+
+    return { lat: position.lat, lng: position.lon };
+  };
+
+  const resolveLocation = async (value: string) => {
+    const parsed = parseLatLng(value);
+    if (parsed) return parsed;
+    return geocodeAddress(value);
+  };
+
+  const drawRoute = async () => {
+    setRouteError(null);
+    const mapInstance = mapInstanceRef.current;
+    const L = leafletRef.current;
+
+    if (!mapInstance || !L) {
+      setRouteError("Map is still loading.");
+      return;
+    }
+
+    const [start, end] = await Promise.all([
+      resolveLocation(from),
+      resolveLocation(to),
+    ]);
+
+    if (!start || !end) {
+      setRouteError(
+        "Enter valid coordinates (lat,lng) or searchable addresses.",
+      );
+      return;
+    }
+
+    if (startMarkerRef.current) {
+      mapInstance.removeLayer(startMarkerRef.current);
+    }
+
+    if (endMarkerRef.current) {
+      mapInstance.removeLayer(endMarkerRef.current);
+    }
+
+    const createLucideMarkerIcon = (icon: React.ReactNode) =>
+      L.divIcon({
+        className: "",
+        html: renderToStaticMarkup(<div>{icon}</div>),
+        iconSize: [28, 28],
+        iconAnchor: [14, 28],
+        popupAnchor: [0, -28],
+      });
+
+    startMarkerRef.current = L.marker([start.lat, start.lng])
+      .setIcon(
+        createLucideMarkerIcon(
+          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white border border-[#3B82F6]">
+            <MapPin color="#3B82F6" size={20} strokeWidth={1.75} />,
+          </div>,
+        ),
+      )
+      .addTo(mapInstance)
+      .bindPopup("Start");
+
+    endMarkerRef.current = L.marker([end.lat, end.lng])
+      .setIcon(
+        createLucideMarkerIcon(
+          <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#3B82F6] border border-white">
+            <Scooter color="white" size={20} strokeWidth={1.75} />,{" "}
+          </div>,
+        ),
+      )
+      .addTo(mapInstance)
+      .bindPopup("End");
+
+    const url = `https://api.tomtom.com/routing/1/calculateRoute/${start.lat},${start.lng}:${end.lat},${end.lng}/json?key=${TOMTOM_KEY}`;
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch route");
+
+      const data = await response.json();
+      const points =
+        data?.routes?.[0]?.legs?.flatMap((leg: any) => leg.points) ?? [];
+
+      if (!points.length) {
+        setRouteError("No route found.");
+        return;
       }
-    })();
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
-  const openZone = useCallback((props: ZoneProps) => {
-    if (panelRef.current === "ride") return;
-    setZoneDetail(props);
-    setSheet("zone");
-  }, []);
+      const latLngs = points.map((p: any) => [p.latitude, p.longitude]);
 
-  const onMapTap = useCallback((point: [number, number], screenPoint: unknown) => {
-    if (panelRef.current === "ride") return;
-    const zone = screenPoint && mapRef.current?.zoneAt(screenPoint);
-    if (zone) { openZone(zone); return; }
-    if (sheetRef.current) { setSheet(null); return; }
-    plan({ name: "Gekozen punt", area: "Via de kaart", point });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+      if (routeLayerRef.current) {
+        mapInstance.removeLayer(routeLayerRef.current);
+      }
 
-  /* ---------- escape closes sheets ---------- */
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => { if (e.key === "Escape") setSheet(null); };
-    document.addEventListener("keydown", h);
-    return () => document.removeEventListener("keydown", h);
-  }, []);
+      routeLayerRef.current = L.polyline(latLngs, {
+        color: "#1E40AF",
+        weight: 5,
+      }).addTo(mapInstance);
 
-  /* ---------- planning (design 31 loader included) ---------- */
-  const pause = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-  async function plan(dest: Destination) {
-    setDestination(dest);
-    history.replaceState(null, "",
-      `#eind=${dest.point[0].toFixed(5)},${dest.point[1].toFixed(5)}&naam=${encodeURIComponent(dest.name)}`);
-    setCalc({ step: 0, street: null });
-    setPanel("calc");
-    setSheet(null);
-
-    const timeline = (async () => {
-      await pause(700); setCalc((c) => ({ ...c, step: 1 }));
-      await pause(700); setCalc((c) => ({ ...c, step: 2 }));
-      await pause(600); setCalc((c) => ({ ...c, step: 3 }));
-      await pause(250);
-    })();
-
-    let r: any = null, error: unknown = null;
-    try {
-      [r] = await Promise.all([
-        fetchRoute(startRef.current, dest.point, vehicleRef.current, city),
-        timeline,
-      ]);
-    } catch (e) { error = e; }
-    if (error) { showNoRoute(String((error as Error)?.message ?? error)); return; }
-
-    try {
-      setRoute(r);
-      setCalc({ step: 3, street: r.straten?.[0] ?? null });
-      const map = mapRef.current;
-      map.drawRoute(r.route);
-      map.setDestination(dest.point, dest.name);
-      map.setWarnings(r.waarschuwingen);
-      map.markArrival(null);
-      map.frameRoute(r.route.coordinates);
-      await pause(350);
-      setPanel("overview");
-    } catch (e) {
-      console.error("Route tonen mislukte:", e);
-      showNoRoute("Er ging iets mis bij het tonen van de route. Probeer het opnieuw.");
+      mapInstance.fitBounds(routeLayerRef.current.getBounds(), {
+        padding: [24, 24],
+      });
+    } catch {
+      setRouteError("Could not draw route.");
     }
-  }
+  };
 
-  function showNoRoute(message?: string) {
-    setPanel("search");
-    warnRef.current?.showWarning({
-      variant: "geen-route",
-      body: message && !/^Route-API/.test(message) ? message : undefined,
-      onAction: () => setPanel("search"),
-    });
-  }
-
-  /* ---------- riding ---------- */
-  function startRide(withRoute?: any) {
-    const r = withRoute ?? route;
-    const { ruler, maneuvers } = buildManeuvers(r.route.coordinates, r.straten);
-    setPanel("ride");
-    setRide({ time: "–", distance: "–", arrival: "–", almost: false });
-
-    simRef.current?.stop();
-    simRef.current = startSimulation({
-      ruler, maneuvers,
-      warnings: r.waarschuwingen,
-      onStep: (step: any) => {
-        lastStepRef.current = step;
-        const map = mapRef.current;
-        map.setRider(step.point, step.heading);
-        map.followRider(step.point, step.heading);
-        setBanner({
-          distance: fmtDistance(step.toManeuverM).toUpperCase(),
-          action: step.maneuver.label,
-          street: step.maneuver.street ?? null,
-          direction: step.maneuver.direction,
-          next: step.nextManeuver
-            ? (step.nextManeuver.street ? `→ ${step.nextManeuver.street}` : step.nextManeuver.label)
-            : null,
-        });
-        setRide({
-          time: fmtDuration(step.remainingS),
-          distance: fmtDistance(step.remainingM),
-          arrival: fmtArrival(step.remainingS),
-          almost: step.remainingM < 150,
-        });
-      },
-      onWarning: (w: any) => {
-        const isRijbaan = w.type === "rijbaan";
-        setBanner(null);
-        warnRef.current?.showWarning({
-          variant: isRijbaan ? "rijbaan" : "verboden",
-          duration: 9000,
-          onAction: () => { if (!isRijbaan) recalc(); },
-        });
-      },
-      onDone: endRide,
-    });
-    simRef.current.setFactor(factor);
-  }
-
-  function endRide() {
-    simRef.current?.stop();
-    simRef.current = null;
-    setPanel("done");
-    setBanner(null);
-    const map = mapRef.current;
-    if (destination) {
-      map.markArrival(destination.point);
-      map.overviewCamera(destination.point);
-    }
-    setTimeout(() => showToast("Netjes geparkeerd. Like a glove."), 900);
-  }
-
-  /** Reroute from the rider's current position — same contract call
-      with the current position as the new start. */
-  async function recalc() {
-    const from = lastStepRef.current?.point ?? startRef.current;
-    simRef.current?.stop();
-    try {
-      const r = await fetchRoute(from, destination!.point, vehicleRef.current, city);
-      setRoute(r);
-      mapRef.current.drawRoute(r.route);
-      mapRef.current.setWarnings(r.waarschuwingen);
-      startRide(r);
-    } catch (e) {
-      showNoRoute(String((e as Error)?.message ?? e));
-    }
-  }
-
-  function newRoute() {
-    simRef.current?.stop();
-    simRef.current = null;
-    setRoute(null);
-    setDestination(null);
-    setBanner(null);
-    history.replaceState(null, "", location.pathname);
-    const map = mapRef.current;
-    map.clearRoute();
-    map.setRider(startRef.current, 0);
-    map.overviewCamera(startRef.current);
-    setPanel("search");
-  }
-
-  /* ---------- layers & window explorer ---------- */
-  function toggleLayer(key: keyof LayerState, on: boolean) {
-    setLayers((l) => ({ ...l, [key]: on }));
-    if (key === "venstertijd") mapRef.current?.setWindowZonesVisible(on);
-    else mapRef.current?.setRegimeVisible(key, on);
-  }
-  function onWindowHour(h: number) {
-    setWindowHour(h);
-    mapRef.current?.setWindowZonesVisible(h >= 11 && h < 18);
-  }
-
-  /* ---------- onboarding done ---------- */
-  function finishOnboarding(vehicle: string) {
-    vehicleRef.current = vehicle;
-    localStorage.setItem(VEHICLE_KEY, vehicle);
-    localStorage.setItem(ONBOARDED_KEY, "1");
-    setPhase("app");
+  if (!TOMTOM_KEY) {
+    return (
+      <div className="flex h-100 w-full items-center justify-center rounded-lg border border-dashed text-sm text-gray-500">
+        Set NEXT_PUBLIC_TOMTOM_API_KEY to load the TomTom map.
+      </div>
+    );
   }
 
   const now = new Date();
@@ -329,111 +224,23 @@ export default function Home() {
 
   /* ---------- render ---------- */
   return (
-    <div className="scoot-app">
-      <div id="map" />
-
-      {phase === "onboarding" && (
-        <OnboardingFlow city={city} onDone={finishOnboarding} onToast={showToast} />
-      )}
-
-      {phase === "app" && (
-        <>
-          <TopBar
-            city={city.name}
-            hasUnread={unread}
-            onBell={() => { setUnread(false); setProfileView("notifications"); }}
-            onAccount={() => setProfileView("account")}
-            onRules={() => setRulesOverlay(true)}
-          />
-
-          {panel !== "calc" && (
-            <FloatStack
-              riding={panel === "ride"}
-              soundOn={soundOn}
-              onSound={() => {
-                setSoundOn((s) => {
-                  showToast(s ? "Gesproken aanwijzingen uit" : "Gesproken aanwijzingen aan");
-                  return !s;
-                });
-              }}
-              onLayers={() => setSheet("layers")}
-              onLocate={() => {
-                const map = mapRef.current;
-                if (simRef.current && lastStepRef.current) {
-                  map.followRider(lastStepRef.current.point, lastStepRef.current.heading);
-                } else map.overviewCamera(startRef.current);
-              }}
-            />
-          )}
-
-          {panel === "ride" && banner && <NavBanner banner={banner} />}
-          {panel === "ride" && (
-            <DemoSpeed factor={factor} onFactor={(x) => { setFactor(x); simRef.current?.setFactor(x); }} />
-          )}
-
-          {/* main bottom panels (one at a time), unless a sheet covers them */}
-          {!sheet && panel === "search" && (
-            <SearchPanel
-              destinations={city.destinations as Destination[]}
-              filter={filter} onFilter={(v) => { setFilter(v); setStatus(null); }}
-              onPick={plan} status={status}
-            />
-          )}
-          {!sheet && panel === "calc" && (
-            <RouteCalc step={calc.step} street={calc.street} time={timeLabel} />
-          )}
-          {!sheet && panel === "overview" && destination && route && (
-            <RouteOverview
-              city={city.name} destination={destination}
-              distance={fmtDistance(route.afstand_m)}
-              duration={fmtDuration(route.duur_s)}
-              warnings={route.waarschuwingen.length}
-              onBack={() => { mapRef.current.clearRoute(); setPanel("search"); }}
-              onStart={() => startRide()}
-            />
-          )}
-          {!sheet && panel === "ride" && <RideBar {...ride} onStop={endRide} />}
-          {!sheet && panel === "done" && destination && route && (
-            <ArrivedPanel
-              destination={destination.name} city={city.name}
-              distance={fmtDistance(route.afstand_m)}
-              duration={fmtDuration(route.duur_s)}
-              warnings={route.waarschuwingen.length}
-              onNew={newRoute}
-            />
-          )}
-
-          {/* secondary sheets */}
-          {sheet === "layers" && (
-            <LayersSheet layers={layers} onToggle={toggleLayer}
-              onWindow={() => setSheet("window")} onStreet={() => setSheet("street")}
-              onClose={() => setSheet(null)} />
-          )}
-          {sheet === "zone" && zoneDetail && (
-            <ZoneDetail zone={zoneDetail} onClose={() => setSheet(null)}
-              onDecree={() => showToast("Opent het Gemeenteblad (demo)")} />
-          )}
-          {sheet === "window" && (
-            <WindowExplorer hour={windowHour} onHour={onWindowHour} onClose={() => setSheet(null)} />
-          )}
-          {sheet === "street" && <StreetLookup onClose={() => setSheet(null)} />}
-        </>
-      )}
-
-      <ProfileStack
-        open={profileView !== null}
-        initial={profileView ?? "account"}
-        onClose={() => setProfileView(null)}
-        onWrapped={() => wrappedRef.current?.openWrapped()}
-        onRules={() => setRulesOverlay(true)}
-      />
-
-      {rulesOverlay && (
-        <RulesScreen mode="reference" city={city} vehicle={vehicleRef.current}
-          onClose={() => setRulesOverlay(false)} />
-      )}
-
-      <Toast text={toast} />
+    <div className="h-screen w-screen">
+      <div className="h-full w-full relative">
+        <div ref={mapRef} className="h-full w-full rounded-lg" />
+        <MapControls
+          from={from}
+          to={to}
+          setFrom={setFrom}
+          setTo={setTo}
+          drawRoute={drawRoute}
+          routeError={routeError}
+        />
+        {routeError && (
+          <div className="absolute left-0 bottom-0 z-1000 w-full rounded-lg bg-red-100 p-3 text-sm text-red-700">
+            {routeError}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
