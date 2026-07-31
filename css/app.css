@@ -209,65 +209,154 @@ button {
 }
 
 /* ---------- zone warning card ---------- */
+/* Dark, matching the nav banner: one visual family while riding.
+   Red ambient glow + pulsing icon carry the urgency; the thin
+   bar at the bottom counts down to auto-dismiss. */
 .zone-card {
   position: fixed;
   z-index: 21;
   left: 14px;
   right: 14px;
-  top: calc(154px + env(safe-area-inset-top));
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  background: var(--paper);
-  border: 1.5px solid var(--danger);
-  border-radius: 14px;
-  padding: 13px 14px;
-  box-shadow: 0 14px 38px rgba(239, 68, 68, 0.25);
+  /* below the nav banner incl. its "Volgende:" row */
+  top: calc(216px + env(safe-area-inset-top));
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 16px 16px 17px;
+  overflow: hidden;
+  box-shadow:
+    0 24px 60px -12px rgba(0, 0, 0, 0.5),
+    0 10px 34px -8px rgba(239, 68, 68, 0.4);
+  animation: zone-in 0.45s cubic-bezier(0.34, 1.35, 0.45, 1);
 }
-.zone-card.rijbaan {
-  border-color: var(--caution);
-  box-shadow: 0 14px 38px rgba(245, 158, 11, 0.25);
+.zone-card::before {
+  /* soft red glow bleeding in from the top-left */
+  content: "";
+  position: absolute;
+  inset: -45% -20% auto;
+  height: 130%;
+  background: radial-gradient(60% 80% at 18% 0%, rgba(239, 68, 68, 0.3), transparent 70%);
+  pointer-events: none;
+}
+@keyframes zone-in {
+  from { transform: translateY(-16px) scale(0.96); opacity: 0; }
 }
 .zone-card-head {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 13px;
 }
 .zone-card-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
   flex: none;
   display: grid;
   place-items: center;
-  background: var(--danger-soft);
-  color: var(--danger);
-  font-weight: 700;
-  font-size: 18px;
+  color: #fff;
+  background: linear-gradient(160deg, #f87171, #dc2626);
+  position: relative;
 }
-.zone-card.rijbaan .zone-card-icon {
-  background: #fef3d9;
-  color: var(--caution);
+.zone-card-icon::after {
+  /* heartbeat ring */
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 17px;
+  border: 2px solid rgba(239, 68, 68, 0.55);
+  animation: zone-pulse 1.6s ease-out infinite;
+}
+@keyframes zone-pulse {
+  0% { opacity: 0.9; transform: scale(0.88); }
+  70%, 100% { opacity: 0; transform: scale(1.28); }
+}
+.zone-card-copy { min-width: 0; }
+.zone-card-kicker {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: #fca5a5;
 }
 .zone-card-text {
-  flex: 1;
-  font-size: 14.5px;
-  line-height: 1.4;
-  color: var(--ink-2);
-}
-.zone-card-text b {
-  color: var(--ink);
-}
-.zone-card-close {
-  border: 0;
-  background: none;
-  color: var(--ink-3);
-  font-size: 22px;
-  line-height: 1;
-  padding: 4px;
+  display: block;
+  margin-top: 2px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.35;
+  color: #e5e7eb;
 }
 .zone-card-actions {
+  position: relative;
   display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.zone-card-reroute {
+  flex: 1;
+  height: 46px;
+  border: 0;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  transition: background 0.15s, transform 0.12s;
+}
+.zone-card-reroute:hover { background: #dc2626; }
+.zone-card-reroute:active { transform: translateY(1px); }
+.zone-card-dismiss {
+  flex: none;
+  height: 46px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  font-size: 15px;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.zone-card-dismiss:hover { background: rgba(255, 255, 255, 0.14); }
+.zone-card-timer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.07);
+}
+.zone-card-timer i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #f87171, #ef4444);
+  transform-origin: left;
+  animation: zone-timer 8s linear forwards;
+}
+@keyframes zone-timer {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+
+/* rijbaan variant: amber instead of red (warning, not violation) */
+.zone-card.rijbaan { box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.5), 0 10px 34px -8px rgba(245, 158, 11, 0.4); }
+.zone-card.rijbaan::before { background: radial-gradient(60% 80% at 18% 0%, rgba(245, 158, 11, 0.28), transparent 70%); }
+.zone-card.rijbaan .zone-card-icon { background: linear-gradient(160deg, #fbbf24, #d97706); }
+.zone-card.rijbaan .zone-card-icon::after { border-color: rgba(245, 158, 11, 0.55); animation-name: zone-pulse; }
+.zone-card.rijbaan .zone-card-kicker { color: #fcd34d; }
+.zone-card.rijbaan .zone-card-reroute { background: var(--caution); }
+.zone-card.rijbaan .zone-card-reroute:hover { background: #d97706; }
+.zone-card.rijbaan .zone-card-timer i { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+
+@media (prefers-reduced-motion: reduce) {
+  .zone-card { animation: none; }
+  .zone-card-icon::after { animation: none; opacity: 0; }
 }
 
 /* ---------- bottom panels ---------- */

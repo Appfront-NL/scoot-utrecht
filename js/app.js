@@ -259,12 +259,20 @@ function showZoneCard(w) {
   const el = $('#zone-card');
   el.classList.remove('hidden');
   el.classList.toggle('rijbaan', w.type === 'rijbaan');
-  // Contract texts usually read "Kop: detail" — bold the head
-  // instead of prefixing our own.
+  // Contract texts usually read "Kop: detail" — the head becomes
+  // the kicker, the detail the body text.
   const [head, ...rest] = w.tekst.split(':');
-  $('#zone-text').innerHTML = rest.length
-    ? `<b>${head.trim()}</b> · ${rest.join(':').trim()}`
-    : `<b>${w.type === 'rijbaan' ? 'Let op' : 'Verboden zone'}</b> · ${w.tekst}`;
+  $('#zone-kicker').textContent = rest.length
+    ? head.trim()
+    : (w.type === 'rijbaan' ? 'Let op' : 'Verboden zone');
+  $('#zone-text').textContent = rest.length ? rest.join(':').trim() : w.tekst;
+  // Restart the entry animation and the countdown bar, also when
+  // the card was already showing for an earlier warning.
+  for (const node of [el, $('#zone-timer-bar')]) {
+    node.style.animation = 'none';
+    void node.offsetWidth;            // force reflow
+    node.style.animation = '';
+  }
   clearTimeout(zoneCardTimer);
   zoneCardTimer = setTimeout(hideZoneCard, 8000);
 }
