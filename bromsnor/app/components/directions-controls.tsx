@@ -1,4 +1,4 @@
-import { Signpost } from "lucide-react";
+import { MessageSquareWarning, Signpost } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { JSX } from "react/jsx-runtime";
 import type { IWarningBoundingBox } from "~/utils/load-bounding-boxes";
@@ -220,19 +220,33 @@ export function DirectionsControls({
         return null;
     }
 
+    const isWarning = instructions[0]?.includes("Warning") ?? false;
+
     return (
         <div className="absolute right-4 top-4 z-1000 max-h-[50vh] w-[min(90vw,360px)] overflow-y-auto rounded-lg bg-white border border-[#E2E8F0] p-4">
             <div className="grid grid-cols-[auto_1fr] items-start gap-3">
-                <Signpost
-                    className="mb-2  text-[#7C3AED] bg-[#F5F3FF] p-2 rounded-xl"
-                    size={40}
-                />
+                {isWarning ? (
+                    <MessageSquareWarning
+                        className="mb-2 text-[#F43F5E] bg-[#FEF2F2] p-2 rounded-xl"
+                        size={40}
+                    />
+                ) : (
+                    <Signpost
+                        className="mb-2  text-[#7C3AED] bg-[#F5F3FF] p-2 rounded-xl"
+                        size={40}
+                    />
+                )}
                 <div>
                     <h3 className="mb-2 text-lg font-semibold text-gray-800">
                         {closestInstruction ? <span>{closestInstruction}</span> : null}
                     </h3>
                     <span>
-                        Next: {instructions[1] ? <span>{instructions[1]}</span> : null}
+                        {instructions.length > 1 &&
+                            instructions[1] &&
+                            instructions[1].length > 0 &&
+                            instructions[1].includes("Warning")
+                            ? `${instructions[1]}`
+                            : "Next step: " + (instructions[1] ?? "No further instructions")}
                     </span>
                 </div>
             </div>

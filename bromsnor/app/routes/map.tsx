@@ -18,6 +18,7 @@ export default function Map() {
   const routeLayerRef = useRef<any>(null);
   const startMarkerRef = useRef<any>(null);
   const endMarkerRef = useRef<any>(null);
+  const [showDirectionsControls, setShowDirectionsControls] = useState(true);
 
   const [routeDrawn, setRouteDrawn] = useState(false);
   const [directDistanceInKm, setDirectDistanceInKm] = useState<number | null>(
@@ -204,6 +205,92 @@ export default function Map() {
     return earthRadius * c;
   };
 
+  const getForbiddenZones = () =>
+    forbiddenZonesBoundingBoxes.flatMap((item) =>
+      item.warning.flatMap((warning) => warning.bbox),
+    );
+
+  const isPointInForbiddenZone = (
+    lat: number,
+    lng: number,
+    zone: { minLat: number; minLng: number; maxLat: number; maxLng: number },
+  ) =>
+    lat >= Math.min(zone.minLat, zone.maxLat) &&
+    lat <= Math.max(zone.minLat, zone.maxLat) &&
+    lng >= Math.min(zone.minLng, zone.maxLng) &&
+    lng <= Math.max(zone.minLng, zone.maxLng);
+
+  const orientation = (
+    p: [number, number],
+    q: [number, number],
+    r: [number, number],
+  ) => {
+    const value = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1]);
+    if (Math.abs(value) < 1e-12) return 0;
+    return value > 0 ? 1 : 2;
+  };
+
+  const onSegment = (
+    p: [number, number],
+    q: [number, number],
+    r: [number, number],
+  ) =>
+    q[0] <= Math.max(p[0], r[0]) &&
+    q[0] >= Math.min(p[0], r[0]) &&
+    q[1] <= Math.max(p[1], r[1]) &&
+    q[1] >= Math.min(p[1], r[1]);
+
+  const segmentsIntersect = (
+    p1: [number, number],
+    q1: [number, number],
+    p2: [number, number],
+    q2: [number, number],
+  ) => {
+    const o1 = orientation(p1, q1, p2);
+    const o2 = orientation(p1, q1, q2);
+    const o3 = orientation(p2, q2, p1);
+    const o4 = orientation(p2, q2, q1);
+
+    if (o1 !== o2 && o3 !== o4) return true;
+
+    if (o1 === 0 && onSegment(p1, p2, q1)) return true;
+    if (o2 === 0 && onSegment(p1, q2, q1)) return true;
+    if (o3 === 0 && onSegment(p2, p1, q2)) return true;
+    if (o4 === 0 && onSegment(p2, q1, q2)) return true;
+
+    return false;
+  };
+
+  const segmentIntersectsForbiddenZone = (
+    a: [number, number],
+    b: [number, number],
+    zone: { minLat: number; minLng: number; maxLat: number; maxLng: number },
+  ) => {
+    const minLat = Math.min(zone.minLat, zone.maxLat);
+    const maxLat = Math.max(zone.minLat, zone.maxLat);
+    const minLng = Math.min(zone.minLng, zone.maxLng);
+    const maxLng = Math.max(zone.minLng, zone.maxLng);
+
+    if (
+      isPointInForbiddenZone(a[0], a[1], zone) ||
+      isPointInForbiddenZone(b[0], b[1], zone)
+    ) {
+      return true;
+    }
+
+    const topLeft: [number, number] = [maxLat, minLng];
+    const topRight: [number, number] = [maxLat, maxLng];
+    const bottomLeft: [number, number] = [minLat, minLng];
+    const bottomRight: [number, number] = [minLat, maxLng];
+
+    return (
+      segmentsIntersect(a, b, topLeft, topRight) ||
+      segmentsIntersect(a, b, topRight, bottomRight) ||
+      segmentsIntersect(a, b, bottomRight, bottomLeft) ||
+      segmentsIntersect(a, b, bottomLeft, topLeft)
+    );
+  };
+
   const drawRoute = async () => {
     setRouteError(null);
     const mapInstance = mapInstanceRef.current;
@@ -301,22 +388,43 @@ export default function Map() {
         return;
       }
 
-      const latLngs = points.map((p: any) => [p.latitude, p.longitude]);
+      const latLngs: [number, number][] = points.map((p: any) => [
+        p.latitude,
+        p.longitude,
+      ]);
+      const forbiddenZones = getForbiddenZones();
 
       if (routeLayerRef.current) {
         mapInstance.removeLayer(routeLayerRef.current);
       }
 
-      routeLayerRef.current = L.polyline(latLngs, {
-        color: "#1E40AF",
-        weight: 5,
-      }).addTo(mapInstance);
+      const routeSegments: any[] = [];
+
+      for (let i = 0; i < latLngs.length - 1; i++) {
+        const startPoint = latLngs[i];
+        const endPoint = latLngs[i + 1];
+
+        const isForbiddenSegment = forbiddenZones.some((zone) =>
+          segmentIntersectsForbiddenZone(startPoint, endPoint, zone),
+        );
+
+        routeSegments.push(
+          L.polyline([startPoint, endPoint], {
+            color: isForbiddenSegment ? "#DC2626" : "#1E40AF",
+            weight: 5,
+          }),
+        );
+      }
+
+      routeLayerRef.current = L.featureGroup(routeSegments).addTo(mapInstance);
 
       mapInstance.fitBounds(routeLayerRef.current.getBounds(), {
         padding: [24, 24],
       });
       setRouteDrawn(true);
-    } catch {
+      setRouteError(null);
+    } catch (error: any) {
+      console.error("Error fetching or drawing route", error);
       setRouteError("Could not draw route.");
       setRouteDrawn(false);
     }
@@ -353,6 +461,8 @@ export default function Map() {
           distance={directDistanceInKm}
           arrivalTime={arrivalTime}
           travelTimeInMinutes={travelTimeInMinutes}
+          setShowDirectionsControls={setShowDirectionsControls}
+          showDirectionsControls={showDirectionsControls}
         />
       </div>
     </div>
