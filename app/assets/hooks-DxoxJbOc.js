@@ -1,0 +1,1 @@
+import{_ as o}from"./preload-helper-C9psaKoR.js";import{r as t}from"./jsx-runtime-Cu11VGd7.js";function u(){const e=t.useRef(null);return t.useEffect(()=>{o(()=>import("./wrapped-DpW30_IL.js"),[]).then(r=>{r.initWrapped(),e.current=r})},[]),{open:()=>{var r;return(r=e.current)==null?void 0:r.openWrapped()}}}export{u};
