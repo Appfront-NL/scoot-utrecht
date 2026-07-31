@@ -18,6 +18,31 @@ Backend koppelen = één regel in `app/lib/config.js` (`apiBase`).
 Browser-only zaken (kaart, custom elements, overlays) laden client-side
 in effects, dus SSR blijft gewoon werken.
 
+## Componentenkit (`app/components/scoot/`)
+
+Alle widgets als onafhankelijke componenten, één per bestand, elk met een
+JSDoc-gebruiksvoorbeeld bovenaan. Importeren via de barrel:
+
+```tsx
+import { SearchPanel, Warning, ZoneDetail, AccountScreen } from "~/components/scoot";
+```
+
+**Live catalogus met alle componenten en copy-pasteerbare voorbeelden: [`/componenten`](http://localhost:5173/componenten)**
+
+| Groep | Componenten |
+|---|---|
+| Primitieven | `Button` `Switch` `BottomSheet` `Stats` `Plate` `Toast`/`useToast` |
+| Kaart-chrome | `TopBar` `FloatStack` `NavBanner` `DemoSpeed` |
+| Rit-flow | `SearchPanel` `RouteOverview` `RouteCalc` `RideBar` `ArrivedPanel` |
+| Kaart-sheets | `LayersSheet` `ZoneDetail` `WindowExplorer` `StreetLookup` |
+| Onboarding | `AuthScreen` `PlatePicker` `RulesDownload` `RulesScreen` `OnboardingFlow` |
+| Profiel | `AccountScreen` `RideHistoryScreen` `SettingsScreen` `NotificationsScreen` `AchievementsScreen` `RuleChangesScreen` `OfflineMapScreen` + `ProfileStack` (kant-en-klare navigatiestack) |
+| Integraties | `Warning`/`useWarning` (wrapper om de `<scoot-warning>` web component), `useWrapped` (SCOOT Wrapped) |
+
+Alle styling komt uit `app/styles/` (globaal geïmporteerd in `root.tsx`);
+de componenten zelf hebben geen extra dependencies. Types (`Destination`,
+`ZoneProps`, `BannerState`, `LayerState`) komen uit dezelfde barrel.
+
 ---
 
 # Welcome to React Router!

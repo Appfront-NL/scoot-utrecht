@@ -16,13 +16,13 @@ import { CITIES } from "~/lib/cities.js";
 import { fetchRoute } from "~/lib/api.js";
 import { buildManeuvers, startSimulation, fmtDistance, fmtDuration, fmtArrival } from "~/lib/navigation.js";
 
-import { Onboarding, RulesScreen } from "~/components/onboarding";
-import { TopBar, FloatStack, NavBanner, DemoSpeed, Toast, type BannerState } from "~/components/chrome";
 import {
-  SearchPanel, OverviewPanel, RidePanel, DonePanel, CalcPanel,
-  LayersSheet, ZoneSheet, WindowSheet, StreetSheet,
-  type Destination, type LayerState, type ZoneProps,
-} from "~/components/panels";
+  OnboardingFlow, RulesScreen, ProfileStack,
+  TopBar, FloatStack, NavBanner, DemoSpeed, Toast,
+  SearchPanel, RouteOverview, RouteCalc, RideBar, ArrivedPanel,
+  LayersSheet, ZoneDetail, WindowExplorer, StreetLookup,
+  type BannerState, type Destination, type LayerState, type ZoneProps,
+} from "~/components/scoot";
 
 export function meta() {
   return [
@@ -58,13 +58,13 @@ export default function Home() {
   const [windowHour, setWindowHour] = useState(14.33);
   const [toast, setToast] = useState<string | null>(null);
   const [unread, setUnread] = useState(true);
+  const [profileView, setProfileView] = useState<null | "account" | "notifications">(null);
   const [factor, setFactor] = useState(8);
   const [soundOn, setSoundOn] = useState(true);
 
   /* ---------- refs to imperative modules ---------- */
   const mapRef = useRef<any>(null);          // app/lib/map.js namespace
   const warnRef = useRef<any>(null);         // warning-card helpers
-  const profileRef = useRef<any>(null);
   const wrappedRef = useRef<any>(null);
   const simRef = useRef<any>(null);
   const startRef = useRef<[number, number]>(city.start as [number, number]);
@@ -89,23 +89,17 @@ export default function Home() {
       vehicleRef.current = localStorage.getItem(VEHICLE_KEY) || "snorfiets";
       setPhase(localStorage.getItem(ONBOARDED_KEY) ? "app" : "onboarding");
 
-      const [map, warn, profile, wrapped] = await Promise.all([
+      const [map, warn, wrapped] = await Promise.all([
         import("~/lib/map.js"),
         import("~/lib/warning-card.js"),
-        import("~/lib/profile.js"),
         import("~/lib/wrapped.js"),
       ]);
       if (cancelled) return;
       mapRef.current = map;
       warnRef.current = warn;
-      profileRef.current = profile;
       wrappedRef.current = wrapped;
 
       wrapped.initWrapped();
-      profile.initProfile({
-        onOpenRules: () => setRulesOverlay(true),
-        onOpenWrapped: wrapped.openWrapped,
-      });
 
       await map.initMap(city.center);
       if (cancelled) return;
@@ -322,7 +316,7 @@ export default function Home() {
       <div id="map" />
 
       {phase === "onboarding" && (
-        <Onboarding city={city} onDone={finishOnboarding} onToast={showToast} />
+        <OnboardingFlow city={city} onDone={finishOnboarding} onToast={showToast} />
       )}
 
       {phase === "app" && (
@@ -330,8 +324,8 @@ export default function Home() {
           <TopBar
             city={city.name}
             hasUnread={unread}
-            onBell={() => { setUnread(false); profileRef.current?.openNotifications(); }}
-            onAccount={() => profileRef.current?.openAccount()}
+            onBell={() => { setUnread(false); setProfileView("notifications"); }}
+            onAccount={() => setProfileView("account")}
             onRules={() => setRulesOverlay(true)}
           />
 
@@ -369,10 +363,10 @@ export default function Home() {
             />
           )}
           {!sheet && panel === "calc" && (
-            <CalcPanel step={calc.step} street={calc.street} time={timeLabel} />
+            <RouteCalc step={calc.step} street={calc.street} time={timeLabel} />
           )}
           {!sheet && panel === "overview" && destination && route && (
-            <OverviewPanel
+            <RouteOverview
               city={city.name} destination={destination}
               distance={fmtDistance(route.afstand_m)}
               duration={fmtDuration(route.duur_s)}
@@ -381,9 +375,9 @@ export default function Home() {
               onStart={() => startRide()}
             />
           )}
-          {!sheet && panel === "ride" && <RidePanel {...ride} onStop={endRide} />}
+          {!sheet && panel === "ride" && <RideBar {...ride} onStop={endRide} />}
           {!sheet && panel === "done" && destination && route && (
-            <DonePanel
+            <ArrivedPanel
               destination={destination.name} city={city.name}
               distance={fmtDistance(route.afstand_m)}
               duration={fmtDuration(route.duur_s)}
@@ -399,15 +393,23 @@ export default function Home() {
               onClose={() => setSheet(null)} />
           )}
           {sheet === "zone" && zoneDetail && (
-            <ZoneSheet zone={zoneDetail} onClose={() => setSheet(null)}
+            <ZoneDetail zone={zoneDetail} onClose={() => setSheet(null)}
               onDecree={() => showToast("Opent het Gemeenteblad (demo)")} />
           )}
           {sheet === "window" && (
-            <WindowSheet hour={windowHour} onHour={onWindowHour} onClose={() => setSheet(null)} />
+            <WindowExplorer hour={windowHour} onHour={onWindowHour} onClose={() => setSheet(null)} />
           )}
-          {sheet === "street" && <StreetSheet onClose={() => setSheet(null)} />}
+          {sheet === "street" && <StreetLookup onClose={() => setSheet(null)} />}
         </>
       )}
+
+      <ProfileStack
+        open={profileView !== null}
+        initial={profileView ?? "account"}
+        onClose={() => setProfileView(null)}
+        onWrapped={() => wrappedRef.current?.openWrapped()}
+        onRules={() => setRulesOverlay(true)}
+      />
 
       {rulesOverlay && (
         <RulesScreen mode="reference" city={city} vehicle={vehicleRef.current}

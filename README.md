@@ -11,6 +11,17 @@ Hackathon-project, twee sporen die parallel bouwen tegen één afgesproken contr
 Spoor A bouwt tegen `mock/route.json` en schakelt aan het eind om naar de echte endpoint van spoor B.
 Lukt koppelen niet, dan staat de mock-demo overeind.
 
+## Twee frontends, één contract
+
+| Waar | Wat | Wanneer gebruiken |
+|---|---|---|
+| **repo-root** (`index.html` + `js/` + `css/`) | Vanilla-versie, geen build-stap, live op [GitHub Pages](https://appfront-nl.github.io/scoot-utrecht/) | Direct demo'en, delen via URL, fallback tijdens de pitch |
+| **`bromsnor/`** | Dezelfde app als React Router-app, met een herbruikbare componentenkit | Doorontwikkelen; hier werkt het team verder |
+
+Beide gebruiken hetzelfde contract en dezelfde regeldata. De widgets zijn in bromsnor
+losse React-componenten (`bromsnor/app/components/scoot/`, één per bestand) met een
+live catalogus op de route **`/componenten`** — zie `bromsnor/README.md`.
+
 ## Het contract
 
 Dit is het enige wat beide sporen van elkaar hoeven te weten. Zie [`CONTRACT.md`](CONTRACT.md).
