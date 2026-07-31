@@ -1,98 +1,102 @@
 // ============================================================
-// API — het enige bestand dat over de draad praat.
+// API — the only file that talks over the wire.
 //
-// haalRoute() volgt exact CONTRACT.md:
-//   verzoek : GET {apiBase}/route?start=lon,lat&eind=lon,lat&voertuig=...
-//   antwoord: { route: LineString, afstand_m, waarschuwingen[], ... }
+// fetchRoute() follows CONTRACT.md exactly:
+//   request : GET {apiBase}/route?start=lon,lat&eind=lon,lat&voertuig=...
+//   response: { route: LineString, afstand_m, waarschuwingen[], ... }
 //
-// Staat CONFIG.apiBase op null, dan verzint mockRoute() lokaal
-// een antwoord in precies dezelfde vorm. De rest van de app ziet
-// geen verschil — dat is het hele idee: als Alissa's endpoint
-// live gaat, verandert er buiten config.js helemaal niets.
+// NOTE on naming: the Dutch field names (afstand_m, waarschuwingen,
+// bij, tekst, voertuig, regime) are the agreed API contract with
+// tracks B and C — do not translate those. Code identifiers are
+// English, contract data stays as specified.
+//
+// With CONFIG.apiBase set to null, mockRoute() fabricates a
+// response in exactly the same shape. The rest of the app can't
+// tell the difference — that's the point: when Alissa's endpoint
+// goes live, nothing outside config.js changes.
 // ============================================================
 
 import { CONFIG } from './config.js';
-import { afstandM, tussen, afstandTotLijnM } from './geo.js';
+import { distanceM, lerp, distanceToLineM } from './geo.js';
 
 /**
- * Vraagt een route op van start naar eind.
- * @param {[number,number]} start  [lon, lat]
- * @param {[number,number]} eind   [lon, lat]
- * @param {string} voertuig        'snorfiets' | 'bromfiets'
+ * Requests a route from start to end.
+ * @param {[number,number]} start   [lon, lat]
+ * @param {[number,number]} end     [lon, lat]
+ * @param {string} vehicle          'snorfiets' | 'bromfiets'
  * @returns {Promise<{route:object, afstand_m:number, duur_s:number, waarschuwingen:Array}>}
  */
-export async function haalRoute(start, eind, voertuig) {
-  const antwoord = CONFIG.apiBase
-    ? await echteRoute(start, eind, voertuig)
-    : await mockRoute(start, eind, voertuig);
-  return normaliseer(antwoord);
+export async function fetchRoute(start, end, vehicle) {
+  const response = CONFIG.apiBase
+    ? await fetchFromApi(start, end, vehicle)
+    : await mockRoute(start, end, vehicle);
+  return normalize(response);
 }
 
-/** Laadt de zone-regels (GeoJSON van spoor C) voor op de kaart. */
-export async function laadRegels() {
-  const res = await fetch(CONFIG.regelsUrl);
-  if (!res.ok) throw new Error(`Regels laden mislukt (${res.status})`);
+/** Loads the zone rules (track C's GeoJSON) for the map. */
+export async function loadRules() {
+  const res = await fetch(CONFIG.rulesUrl);
+  if (!res.ok) throw new Error(`Regels laden mislukte (${res.status})`);
   return res.json();
 }
 
-/* ---------- echte backend (spoor B) ---------- */
+/* ---------- real backend (track B) ---------- */
 
-async function echteRoute(start, eind, voertuig) {
+async function fetchFromApi(start, end, vehicle) {
   const url = new URL('/route', CONFIG.apiBase);
   url.searchParams.set('start', start.join(','));
-  url.searchParams.set('eind', eind.join(','));
-  url.searchParams.set('voertuig', voertuig);
+  url.searchParams.set('eind', end.join(','));
+  url.searchParams.set('voertuig', vehicle);
 
   const res = await fetch(url);
   if (!res.ok) {
-    // Contract: fouten hebben een { fout: "..." } body.
+    // Contract: errors carry a { fout: "..." } body.
     const body = await res.json().catch(() => ({}));
     throw new Error(body.fout || `Route-API gaf ${res.status}`);
   }
   return res.json();
 }
 
-/* ---------- mock (spoor A solo) ---------- */
+/* ---------- mock (track A solo) ---------- */
 
 /**
- * Verzint een route: een lijn met een knik van start naar eind,
- * verdicht tot korte segmenten zodat navigatie en animatie iets
- * hebben om op te lopen. Waarschuwingen worden afgeleid uit de
- * échte zone-regels: komt de lijn dicht bij een verboden of
- * rijbaan-regel, dan krijg je dezelfde waarschuwing die de echte
- * backend straks ook zou geven.
+ * Fabricates a route: a dog-legged line from start to end,
+ * densified into short segments so navigation and animation have
+ * something to run on. Warnings are derived from the *real* zone
+ * rules: if the line passes close to a verboden or rijbaan rule,
+ * you get the same warning the real backend would produce.
  */
-async function mockRoute(start, eind, voertuig) {
-  // Knikpunt: eerst grofweg oost-west, dan noord-zuid. Geen echte
-  // routering — dat is spoor B — maar het oogt als een straatpatroon.
-  const knik = [eind[0], start[1]];
+async function mockRoute(start, end, vehicle) {
+  // Bend point: roughly east-west first, then north-south. Not real
+  // routing — that's track B — but it reads like a street pattern.
+  const bend = [end[0], start[1]];
   const coords = [
-    ...verdicht(start, knik, 6),
-    ...verdicht(knik, eind, 6).slice(1),
+    ...densify(start, bend, 6),
+    ...densify(bend, end, 6).slice(1),
   ];
 
-  let afstand = 0;
-  for (let i = 1; i < coords.length; i++) afstand += afstandM(coords[i - 1], coords[i]);
+  let distance = 0;
+  for (let i = 1; i < coords.length; i++) distance += distanceM(coords[i - 1], coords[i]);
 
-  // Waarschuwingen uit de regeldata, net als het contract belooft.
+  // Warnings from the rule data, just like the contract promises.
   const waarschuwingen = [];
   try {
-    const regels = await laadRegels();
-    for (const f of regels.features) {
-      if (f.properties.voertuig !== voertuig) continue;
+    const rules = await loadRules();
+    for (const f of rules.features) {
+      if (f.properties.voertuig !== vehicle) continue;
       if (!['verboden', 'rijbaan'].includes(f.properties.regime)) continue;
       const zoneCoords = f.geometry.type === 'Polygon'
         ? f.geometry.coordinates[0]
         : f.geometry.coordinates;
-      // "dichtbij" = binnen 130 m van de route
-      let dichtstbij = null, kleinste = Infinity;
+      // "close" = within 130 m of the route
+      let nearest = null, best = Infinity;
       for (const p of coords) {
-        const d = afstandTotLijnM(p, zoneCoords);
-        if (d < kleinste) { kleinste = d; dichtstbij = p; }
+        const d = distanceToLineM(p, zoneCoords);
+        if (d < best) { best = d; nearest = p; }
       }
-      if (kleinste < 130) {
+      if (best < 130) {
         waarschuwingen.push({
-          bij: dichtstbij,
+          bij: nearest,
           tekst: f.properties.regime === 'verboden'
             ? `Verboden zone: ${f.properties.naam}`
             : `Naar de rijbaan (helmplicht): ${f.properties.naam}`,
@@ -101,53 +105,53 @@ async function mockRoute(start, eind, voertuig) {
       }
     }
   } catch {
-    // Geen regels kunnen laden is geen reden om geen route te tonen.
+    // Failing to load rules is no reason to withhold a route.
   }
 
   return {
     route: { type: 'LineString', coordinates: coords },
-    afstand_m: Math.round(afstand),
+    afstand_m: Math.round(distance),
     waarschuwingen,
   };
 }
 
-/** Deelt het stuk a→b op in `n` segmenten met een klein slingertje. */
-function verdicht(a, b, n) {
-  const punten = [];
+/** Splits the leg a→b into `n` segments with a slight wiggle. */
+function densify(a, b, n) {
+  const points = [];
   for (let i = 0; i <= n; i++) {
-    const p = tussen(a, b, i / n);
+    const p = lerp(a, b, i / n);
     if (i > 0 && i < n) {
-      // heel lichte jitter zodat de lijn niet steriel-recht oogt
+      // subtle jitter so the line doesn't look sterile-straight
       p[0] += (Math.sin(i * 2.7) * 0.00018);
       p[1] += (Math.cos(i * 1.9) * 0.00012);
     }
-    punten.push(p);
+    points.push(p);
   }
-  return punten;
+  return points;
 }
 
-/* ---------- normalisatie ---------- */
+/* ---------- normalization ---------- */
 
 /**
- * Vangt de optionele velden uit het contract af, zodat de rest
- * van de app nooit hoeft te checken of iets bestaat:
- * - duur_s ontbreekt? Schatten op basis van afstand.
- * - waarschuwingen ontbreekt? Lege lijst.
- * - waarschuwing zonder type? Contract zegt: ga uit van 'verboden'.
+ * Absorbs the contract's optional fields so the rest of the app
+ * never has to existence-check anything:
+ * - duur_s missing? Estimate from distance.
+ * - waarschuwingen missing? Empty list.
+ * - warning without a type? Contract says: assume 'verboden'.
  */
-function normaliseer(antwoord) {
-  if (!antwoord?.route?.coordinates?.length) {
+function normalize(response) {
+  if (!response?.route?.coordinates?.length) {
     throw new Error('Antwoord voldoet niet aan het contract: route.coordinates ontbreekt');
   }
   return {
-    route: antwoord.route,
-    afstand_m: antwoord.afstand_m ?? 0,
-    duur_s: antwoord.duur_s ?? Math.round((antwoord.afstand_m ?? 0) / CONFIG.gemiddeldeSnelheidMs),
-    waarschuwingen: (antwoord.waarschuwingen ?? []).map(w => ({
+    route: response.route,
+    afstand_m: response.afstand_m ?? 0,
+    duur_s: response.duur_s ?? Math.round((response.afstand_m ?? 0) / CONFIG.averageSpeedMs),
+    waarschuwingen: (response.waarschuwingen ?? []).map(w => ({
       bij: w.bij,
       tekst: w.tekst,
       type: w.type ?? 'verboden',
     })),
-    zones: antwoord.zones ?? null,
+    zones: response.zones ?? null,
   };
 }

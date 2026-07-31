@@ -7,11 +7,11 @@
 <meta name="description" content="Deelscooter-navigatie voor Utrecht die je om verboden zones heen leidt.">
 <meta name="theme-color" content="#8b5cf6">
 
-<!-- Kaart: MapLibre GL (gratis, geen key nodig) -->
+<!-- Map: MapLibre GL (free, no key needed) -->
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 
-<!-- Typografie uit het design (DM Sans) -->
+<!-- Typography from the design (DM Sans) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -20,10 +20,10 @@
 </head>
 <body>
 
-<!-- De kaart vult het hele scherm; alle UI zweeft eroverheen. -->
-<div id="kaart"></div>
+<!-- The map fills the screen; all UI floats on top. -->
+<div id="map"></div>
 
-<!-- Merk-chip linksboven -->
+<!-- Brand chip, top left -->
 <header class="topbar">
   <div class="brand">
     <span class="brand-mark" aria-hidden="true">
@@ -31,99 +31,128 @@
     </span>
     <span class="brand-name">SCOOT</span>
   </div>
-  <!-- Voertuigkeuze gaat 1-op-1 mee in het API-verzoek (zie CONTRACT.md) -->
-  <div class="voertuig" role="radiogroup" aria-label="Voertuig">
-    <button class="voertuig-optie aan" data-voertuig="snorfiets" role="radio" aria-checked="true">Snorfiets</button>
-    <button class="voertuig-optie" data-voertuig="bromfiets" role="radio" aria-checked="false">Bromfiets</button>
+  <div class="top-right">
+    <!-- Vehicle choice goes into the API request verbatim (see CONTRACT.md) -->
+    <div class="vehicle" role="radiogroup" aria-label="Voertuig">
+      <button class="vehicle-option active" data-vehicle="snorfiets" role="radio" aria-checked="true">Snorfiets</button>
+      <button class="vehicle-option" data-vehicle="bromfiets" role="radio" aria-checked="false">Bromfiets</button>
+    </div>
+    <button class="info-button" id="btn-rules" aria-label="Regels en wetgeving">
+      <svg width="19" height="19" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M12 16v-4.5M12 8h.01"/></svg>
+    </button>
   </div>
 </header>
 
-<!-- Navigatiebanner (alleen zichtbaar tijdens het rijden) -->
-<div class="navbanner verborgen" id="navbanner" aria-live="polite">
-  <div class="navbanner-hoofd">
-    <span class="navbanner-pijl" id="nav-pijl"></span>
+<!-- Navigation banner (visible while riding) -->
+<div class="nav-banner hidden" id="nav-banner" aria-live="polite">
+  <div class="nav-banner-main">
+    <span class="nav-banner-arrow" id="nav-arrow"></span>
     <span>
-      <span class="navbanner-afstand" id="nav-afstand">–</span>
-      <span class="navbanner-actie" id="nav-actie">Rechtdoor</span>
+      <span class="nav-banner-distance" id="nav-distance">–</span>
+      <span class="nav-banner-action" id="nav-action">Rechtdoor</span>
     </span>
   </div>
+  <div class="nav-banner-next hidden" id="nav-next"></div>
 </div>
 
-<!-- Waarschuwing bij het naderen van een zone -->
-<div class="zonekaart verborgen" id="zonekaart" role="alert">
-  <span class="zonekaart-icoon" id="zone-icoon">!</span>
-  <span class="zonekaart-tekst" id="zone-tekst"></span>
-  <button class="zonekaart-sluit" id="zone-sluit" aria-label="Waarschuwing sluiten">&times;</button>
+<!-- Warning card when approaching a zone -->
+<div class="zone-card hidden" id="zone-card" role="alert">
+  <div class="zone-card-head">
+    <span class="zone-card-icon">!</span>
+    <span class="zone-card-text" id="zone-text"></span>
+    <button class="zone-card-close" id="zone-close" aria-label="Waarschuwing sluiten">&times;</button>
+  </div>
+  <div class="zone-card-actions">
+    <button class="button danger small" id="zone-reroute">
+      <svg width="17" height="17" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2.6"/><circle cx="18" cy="5" r="2.6"/><path d="M8.5 18.4c5-1 6.5-3 7-6 .4-2.4 1-3.9 2-4.9"/></svg>
+      Nieuwe route
+    </button>
+  </div>
 </div>
 
-<!-- ===== Onderste panelen: er is er altijd precies één zichtbaar ===== -->
+<!-- Rules screen: the design's "Welkom in Utrecht" page.
+     Shows once on first launch, afterwards via the info button. -->
+<section class="rules-screen hidden" id="rules-screen">
+  <div class="rules-screen-inner">
+    <p class="eyebrow">SCOOT</p>
+    <h2 class="rules-title">Welkom in Utrecht</h2>
+    <p class="rules-sub" id="rules-sub"></p>
+    <div class="rules-list" id="rules-list"></div>
+    <button class="button" id="rules-ok">Ik heb het begrepen
+      <svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+    </button>
+  </div>
+</section>
 
-<!-- 1. Bestemming zoeken -->
-<section class="paneel" id="paneel-zoek">
+<!-- ===== Bottom panels: exactly one is visible at any time ===== -->
+
+<!-- 1. Search -->
+<section class="panel" id="panel-search">
   <div class="grab" aria-hidden="true"></div>
-  <h1 class="paneel-titel">Waar wil je heen?</h1>
-  <div class="zoekveld">
-    <input id="zoek-invoer" type="text" placeholder="Zoek op locatie…" autocomplete="off" enterkeyhint="search">
+  <h1 class="panel-title">Waar wil je heen?</h1>
+  <div class="search-field">
+    <input id="search-input" type="text" placeholder="Zoek op locatie…" autocomplete="off" enterkeyhint="search">
     <svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" fill="none" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>
   </div>
-  <div class="suggesties" id="suggesties"></div>
+  <div class="suggestions" id="suggestions"></div>
+  <p class="hint hidden" id="search-status" aria-live="polite"></p>
   <p class="hint">Of tik op de kaart om een bestemming te kiezen.</p>
 </section>
 
-<!-- 2. Route-overzicht -->
-<section class="paneel verborgen" id="paneel-overzicht">
+<!-- 2. Route overview -->
+<section class="panel hidden" id="panel-overview">
   <div class="grab" aria-hidden="true"></div>
-  <button class="terug" id="overzicht-terug" aria-label="Terug naar zoeken">
+  <button class="back" id="overview-back" aria-label="Terug naar zoeken">
     <svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m15 5-7 7 7 7"/></svg>
   </button>
-  <h2 class="paneel-titel klein">Route overzicht</h2>
+  <h2 class="panel-title small">Route overzicht</h2>
   <div class="fromto">
-    <div class="fromto-rij"><span class="stip start"></span><span><b>Huidige locatie</b><small>Utrecht</small></span></div>
-    <div class="fromto-lijn"></div>
-    <div class="fromto-rij"><span class="stip eind"></span><span><b id="overzicht-bestemming">–</b><small>Utrecht</small></span></div>
+    <div class="fromto-row"><span class="dot start"></span><span><b>Huidige locatie</b><small>Utrecht</small></span></div>
+    <div class="fromto-line"></div>
+    <div class="fromto-row"><span class="dot end"></span><span><b id="overview-destination">–</b><small>Utrecht</small></span></div>
   </div>
-  <div class="statistieken">
-    <div class="stat"><span class="stat-w" id="overzicht-afstand">–</span><span class="stat-l">Afstand</span></div>
-    <div class="stat"><span class="stat-w accent" id="overzicht-tijd">–</span><span class="stat-l">Reistijd</span></div>
-    <div class="stat"><span class="stat-w" id="overzicht-waarschuwingen">–</span><span class="stat-l">Waarschuwingen</span></div>
+  <div class="stats">
+    <div class="stat"><span class="stat-value" id="overview-distance">–</span><span class="stat-label">Afstand</span></div>
+    <div class="stat"><span class="stat-value accent" id="overview-time">–</span><span class="stat-label">Reistijd</span></div>
+    <div class="stat"><span class="stat-value" id="overview-warnings">–</span><span class="stat-label">Waarschuwingen</span></div>
   </div>
-  <button class="knop" id="start-route">Route starten
+  <button class="button" id="start-route">Route starten
     <svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
   </button>
 </section>
 
-<!-- 3. Rijweergave -->
-<section class="paneel rijden verborgen" id="paneel-rijden">
-  <div class="rij-stat"><span class="stat-w accent" id="rij-tijd">–</span><span class="stat-l">Reistijd</span></div>
-  <div class="rij-scheiding"></div>
-  <div class="rij-stat"><span class="stat-w" id="rij-afstand">–</span><span class="stat-l">Afstand</span></div>
-  <div class="rij-scheiding"></div>
-  <div class="rij-stat"><span class="stat-w" id="rij-aankomst">–</span><span class="stat-l">Aankomst</span></div>
+<!-- 3. Ride view -->
+<section class="panel ride hidden" id="panel-ride">
+  <div class="ride-stat"><span class="stat-value accent" id="ride-time">–</span><span class="stat-label">Reistijd</span></div>
+  <div class="ride-divider"></div>
+  <div class="ride-stat"><span class="stat-value" id="ride-distance">–</span><span class="stat-label">Afstand</span></div>
+  <div class="ride-divider"></div>
+  <div class="ride-stat"><span class="stat-value" id="ride-arrival">–</span><span class="stat-label">Aankomst</span></div>
   <button class="stop" id="stop-route" aria-label="Rit stoppen">
     <svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.1" fill="none" stroke-linecap="round"><path d="m6 6 12 12M18 6 6 18"/></svg>
   </button>
 </section>
 
-<!-- 4. Aangekomen -->
-<section class="paneel verborgen" id="paneel-klaar">
+<!-- 4. Arrived -->
+<section class="panel hidden" id="panel-done">
   <div class="grab" aria-hidden="true"></div>
-  <div class="klaar-vink" aria-hidden="true">
+  <div class="done-check" aria-hidden="true">
     <svg width="28" height="28" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 12.5 5 5 10-11"/></svg>
   </div>
-  <h2 class="paneel-titel klein midden">Je bent aangekomen</h2>
-  <p class="klaar-sub" id="klaar-bestemming">–</p>
-  <div class="statistieken">
-    <div class="stat"><span class="stat-w" id="klaar-afstand">–</span><span class="stat-l">Afstand</span></div>
-    <div class="stat"><span class="stat-w" id="klaar-tijd">–</span><span class="stat-l">Duur</span></div>
-    <div class="stat"><span class="stat-w accent" id="klaar-waarschuwingen">–</span><span class="stat-l">Waarschuwingen</span></div>
+  <h2 class="panel-title small center">Je bent aangekomen</h2>
+  <p class="done-sub" id="done-destination">–</p>
+  <div class="stats">
+    <div class="stat"><span class="stat-value" id="done-distance">–</span><span class="stat-label">Afstand</span></div>
+    <div class="stat"><span class="stat-value" id="done-time">–</span><span class="stat-label">Duur</span></div>
+    <div class="stat"><span class="stat-value accent" id="done-warnings">–</span><span class="stat-label">Waarschuwingen</span></div>
   </div>
-  <button class="knop" id="nieuwe-route">Nieuwe route plannen</button>
+  <button class="button" id="new-route">Nieuwe route plannen</button>
 </section>
 
-<!-- Demo-snelheid (alleen zichtbaar tijdens het rijden; puur voor de pitch) -->
-<div class="demo-snelheid verborgen" id="demo-snelheid" aria-label="Demosnelheid">
+<!-- Demo speed (visible while riding; purely for the pitch) -->
+<div class="demo-speed hidden" id="demo-speed" aria-label="Demosnelheid">
   <button data-x="1" >1&times;</button>
-  <button data-x="8" class="aan">8&times;</button>
+  <button data-x="8" class="active">8&times;</button>
   <button data-x="25">25&times;</button>
 </div>
 

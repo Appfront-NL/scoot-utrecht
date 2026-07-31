@@ -1,24 +1,24 @@
 // ============================================================
-// GEO — kleine, pure rekenhulpjes voor WGS84-coördinaten.
-// Overal in de app is een punt een array [lon, lat],
-// dezelfde volgorde als GeoJSON en als het API-contract.
-// Geen dependencies; dit is alles wat we van turf nodig hadden.
+// GEO — small, pure helpers for WGS84 coordinates.
+// Throughout the app a point is an array [lon, lat], the same
+// order as GeoJSON and the API contract.
+// No dependencies; this is all we needed from turf.
 // ============================================================
 
-const R_AARDE = 6371000; // meters
+const EARTH_R = 6371000; // meters
 
-/** Afstand in meters tussen twee punten (haversine). */
-export function afstandM(a, b) {
+/** Distance in meters between two points (haversine). */
+export function distanceM(a, b) {
   const dLat = rad(b[1] - a[1]);
   const dLon = rad(b[0] - a[0]);
   const s =
     Math.sin(dLat / 2) ** 2 +
     Math.cos(rad(a[1])) * Math.cos(rad(b[1])) * Math.sin(dLon / 2) ** 2;
-  return 2 * R_AARDE * Math.asin(Math.sqrt(s));
+  return 2 * EARTH_R * Math.asin(Math.sqrt(s));
 }
 
-/** Kompaskoers in graden (0 = noord, 90 = oost) van a naar b. */
-export function koers(a, b) {
+/** Compass bearing in degrees (0 = north, 90 = east) from a to b. */
+export function bearingDeg(a, b) {
   const y = Math.sin(rad(b[0] - a[0])) * Math.cos(rad(b[1]));
   const x =
     Math.cos(rad(a[1])) * Math.sin(rad(b[1])) -
@@ -26,43 +26,43 @@ export function koers(a, b) {
   return (deg(Math.atan2(y, x)) + 360) % 360;
 }
 
-/** Lineaire interpolatie tussen twee punten (t van 0 tot 1). */
-export function tussen(a, b, t) {
+/** Linear interpolation between two points (t from 0 to 1). */
+export function lerp(a, b, t) {
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 }
 
 /**
- * Maakt van een lijn een "liniaal": cumulatieve afstand per punt.
- * Daarmee kun je goedkoop vragen: waar ben ik na X meter?
+ * Turns a line into a "ruler": cumulative distance per vertex.
+ * That makes "where am I after X meters?" a cheap question.
  */
-export function maakLiniaal(coords) {
+export function makeRuler(coords) {
   const cum = [0];
   for (let i = 1; i < coords.length; i++) {
-    cum.push(cum[i - 1] + afstandM(coords[i - 1], coords[i]));
+    cum.push(cum[i - 1] + distanceM(coords[i - 1], coords[i]));
   }
-  return { coords, cum, totaal: cum[cum.length - 1] };
+  return { coords, cum, total: cum[cum.length - 1] };
 }
 
-/** Punt + rijrichting op `meters` afstand langs de liniaal. */
-export function puntOpLiniaal(liniaal, meters) {
-  const { coords, cum, totaal } = liniaal;
-  const d = Math.max(0, Math.min(totaal, meters));
+/** Point + travel heading at `meters` along the ruler. */
+export function pointAlong(ruler, meters) {
+  const { coords, cum, total } = ruler;
+  const d = Math.max(0, Math.min(total, meters));
   let i = 1;
   while (i < cum.length - 1 && cum[i] < d) i++;
   const segment = cum[i] - cum[i - 1] || 1;
   const t = (d - cum[i - 1]) / segment;
   return {
-    punt: tussen(coords[i - 1], coords[i], t),
-    richting: koers(coords[i - 1], coords[i]),
+    point: lerp(coords[i - 1], coords[i], t),
+    heading: bearingDeg(coords[i - 1], coords[i]),
     segmentIndex: i,
   };
 }
 
-/** Kortste afstand (meters) van een punt tot een lijn, benaderd per vertex. */
-export function afstandTotLijnM(punt, coords) {
-  let kleinste = Infinity;
-  for (const c of coords) kleinste = Math.min(kleinste, afstandM(punt, c));
-  return kleinste;
+/** Shortest distance (meters) from a point to a line, vertex-approximated. */
+export function distanceToLineM(point, coords) {
+  let best = Infinity;
+  for (const c of coords) best = Math.min(best, distanceM(point, c));
+  return best;
 }
 
 function rad(d) { return (d * Math.PI) / 180; }

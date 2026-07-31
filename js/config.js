@@ -1,36 +1,35 @@
 // ============================================================
-// CONFIG — het enige bestand dat je aanpast om de echte
-// routing-API te koppelen. Alles hier, nergens anders.
+// CONFIG — the only file you touch to hook up the real
+// routing API. Everything lives here, nowhere else.
 //
-// ALISSA: zet `apiBase` naar jouw endpoint en de app praat
-// tegen jouw backend volgens CONTRACT.md. That's it.
-// Voorbeeld:  apiBase: "https://scoot-api.jouwdomein.dev"
-// De app roept dan aan:
+// ALISSA: point `apiBase` at your endpoint and the app talks
+// to your backend per CONTRACT.md. That's it.
+// Example:  apiBase: "https://scoot-api.yourdomain.dev"
+// The app will then call:
 //   GET {apiBase}/route?start=lon,lat&eind=lon,lat&voertuig=snorfiets
-// Vergeet CORS niet (Access-Control-Allow-Origin), zie CONTRACT.md.
+// Don't forget CORS (Access-Control-Allow-Origin), see CONTRACT.md.
 // ============================================================
 
 export const CONFIG = {
-  // null = mock-modus: de app verzint zelf een route (js/api.js)
-  // zodat spoor A demo-baar is zonder backend.
+  // null = mock mode: the app fabricates a route locally (js/api.js)
+  // so track A stays demo-able without a backend.
   apiBase: null,
 
-  // Startpositie van de rijder [lon, lat] — Oudegracht, Utrecht.
-  // TODO (later, niet vandaag): vervangen door echte geolocatie
-  // via navigator.geolocation, met dit punt als fallback.
+  // Rider start position [lon, lat] — Oudegracht, Utrecht.
+  // TODO (later, not today): replace with real geolocation via
+  // navigator.geolocation, falling back to this point.
   start: [5.11815, 52.09340],
 
-  // Kaartstijl: OpenFreeMap "positron" — gratis, geen API-key,
-  // en licht zodat de route en zones goed opvallen.
-  // Alternatieven: .../styles/bright of .../styles/liberty
-  kaartStijl: 'https://tiles.openfreemap.org/styles/positron',
+  // Map style: OpenFreeMap "positron" — free, no API key, and
+  // light so the route and zones stand out.
+  // Alternatives: .../styles/bright or .../styles/liberty
+  mapStyle: 'https://tiles.openfreemap.org/styles/positron',
 
-  // Zone-regels zoals spoor C ze aanlevert (zie CONTRACT.md,
-  // sectie "Regeldata"). De app tekent deze altijd op de kaart,
-  // ook in mock-modus.
-  regelsUrl: 'mock/regels-utrecht.geojson',
+  // Zone rules as delivered by track C (see CONTRACT.md, section
+  // "Regeldata"). The app always draws these, mock mode included.
+  rulesUrl: 'mock/regels-utrecht.geojson',
 
-  // Gemiddelde snelheid voor tijdschattingen als de API geen
-  // duur_s teruggeeft: 4.2 m/s ≈ 15 km/u (stadssnelheid snorfiets).
-  gemiddeldeSnelheidMs: 4.2,
+  // Average speed for time estimates when the API omits duur_s:
+  // 4.2 m/s ≈ 15 km/h (city speed for a snorfiets).
+  averageSpeedMs: 4.2,
 };
