@@ -15,8 +15,24 @@
 
 import { useEffect, useRef, useState } from "react";
 
+export async function loader() {
+  return null;
+}
+
 const backIcon = (
-  <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+  <svg
+    width={22}
+    height={22}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={1.7}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M15 18l-6-6 6-6" />
+  </svg>
 );
 
 const SETTINGS_KEY = "scoot.profile.settings";
@@ -38,16 +54,39 @@ const DEFAULT_SETTINGS: Settings = {
 };
 
 const TOGGLES: { key: keyof Settings; title: string; sub: string }[] = [
-  { key: "helm", title: "Helmherinnering", sub: "Waarschuw me voor routes over de rijbaan" },
-  { key: "zone", title: "Zonewaarschuwing", sub: "Trilsignaal bij een naderende verboden zone" },
-  { key: "venster", title: "Venstertijden meenemen", sub: "Houd rekening met tijdgebonden verboden" },
-  { key: "stem", title: "Gesproken aanwijzingen", sub: "Stem tijdens het rijden" },
-  { key: "besluiten", title: "Meld nieuwe besluiten", sub: "Bericht als er iets verandert op je routes" },
+  {
+    key: "helm",
+    title: "Helmherinnering",
+    sub: "Waarschuw me voor routes over de rijbaan",
+  },
+  {
+    key: "zone",
+    title: "Zonewaarschuwing",
+    sub: "Trilsignaal bij een naderende verboden zone",
+  },
+  {
+    key: "venster",
+    title: "Venstertijden meenemen",
+    sub: "Houd rekening met tijdgebonden verboden",
+  },
+  {
+    key: "stem",
+    title: "Gesproken aanwijzingen",
+    sub: "Stem tijdens het rijden",
+  },
+  {
+    key: "besluiten",
+    title: "Meld nieuwe besluiten",
+    sub: "Bericht als er iets verandert op je routes",
+  },
 ];
 
 function loadSettings(): Settings {
   try {
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}") };
+    return {
+      ...DEFAULT_SETTINGS,
+      ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}"),
+    };
   } catch {
     // storage unavailable or corrupt: fall back to defaults
     return { ...DEFAULT_SETTINGS };
@@ -62,7 +101,11 @@ export type SettingsScreenProps = {
   onBack?: () => void;
 };
 
-export function SettingsScreen({ open = true, zIndex, onBack }: SettingsScreenProps) {
+export function SettingsScreen({
+  open = true,
+  zIndex,
+  onBack,
+}: SettingsScreenProps) {
   // Start from defaults so server and client render the same markup,
   // then hydrate the stored values on mount.
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
@@ -92,29 +135,47 @@ export function SettingsScreen({ open = true, zIndex, onBack }: SettingsScreenPr
       style={zIndex !== undefined ? { zIndex } : undefined}
     >
       <div className="profile-screen-inner">
-        <header className="profile-header">
-          <button className="profile-back" onClick={onBack} aria-label="Terug">{backIcon}</button>
-        </header>
+        {onBack ? (
+          <header className="profile-header">
+            <button
+              className="profile-back"
+              onClick={onBack}
+              aria-label="Terug"
+            >
+              {backIcon}
+            </button>
+          </header>
+        ) : null}
         <h1 className="profile-title">Instellingen</h1>
         <h2 className="profile-section">Jouw voertuig</h2>
-        <p className="profile-sub">Bepaalt welke verkeersregels op je kaart staan.</p>
+        <p className="profile-sub">
+          Bepaalt welke verkeersregels op je kaart staan.
+        </p>
         <div className="profile-card profile-vehicle">
           <span className="profile-plate" aria-label="Kenteken 52-ND-3">
             <span className="profile-plate-band">NL</span>
             <span className="profile-plate-number">52-ND-3</span>
           </span>
-          <span className="profile-vehicle-label">Snorfiets, blauw kenteken</span>
+          <span className="profile-vehicle-label">
+            Snorfiets, blauw kenteken
+          </span>
         </div>
         <div className="profile-card profile-toggles">
           {TOGGLES.map((item) => (
             <label className="profile-toggle" key={item.key}>
-              <span className="profile-toggle-text"><b>{item.title}</b><small>{item.sub}</small></span>
+              <span className="profile-toggle-text">
+                <b>{item.title}</b>
+                <small>{item.sub}</small>
+              </span>
               <span className="profile-switch">
                 <input
                   type="checkbox"
                   checked={settings[item.key]}
                   onChange={(e) =>
-                    setSettings((prev) => ({ ...prev, [item.key]: e.target.checked }))
+                    setSettings((prev) => ({
+                      ...prev,
+                      [item.key]: e.target.checked,
+                    }))
                   }
                 />
                 <i />
@@ -125,4 +186,8 @@ export function SettingsScreen({ open = true, zIndex, onBack }: SettingsScreenPr
       </div>
     </section>
   );
+}
+
+export default function SettingsPage() {
+  return <SettingsScreen />;
 }
