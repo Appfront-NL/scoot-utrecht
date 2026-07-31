@@ -174,9 +174,7 @@ export function DirectionsControls({
             );
 
             if (isNearNow || routeNearForbidden) {
-                steps.push(
-                    "Warning: Forbidden zone nearby on your route. Reroute to avoid restricted area.",
-                );
+                steps.push("Warning: You are near or entering a forbidden zone.");
             }
         }
 
@@ -223,7 +221,7 @@ export function DirectionsControls({
     const isWarning = instructions[0]?.includes("Warning") ?? false;
 
     return (
-        <div className="absolute right-4 top-[10%] z-1000 max-h-[50vh] w-[min(90vw,360px)] overflow-y-auto rounded-lg bg-white border border-[#E2E8F0] p-4">
+        <div className="absolute right-4 top-[5%] z-1000 max-h-[50vh] w-[min(80vw,360px)] overflow-y-auto rounded-lg bg-white border border-[#E2E8F0] p-4">
             <div className="grid grid-cols-[auto_1fr] items-start gap-3">
                 {isWarning ? (
                     <MessageSquareWarning
@@ -237,7 +235,7 @@ export function DirectionsControls({
                     />
                 )}
                 <div>
-                    <h3 className="mb-2 text-lg font-semibold text-gray-800">
+                    <h3 className="mb-2 text-[16px] font-semibold text-gray-800">
                         {closestInstruction ? <span>{closestInstruction}</span> : null}
                     </h3>
                     <span>

@@ -468,7 +468,8 @@ export default function Map() {
       routeLayerRef.current = L.featureGroup(routeSegments).addTo(mapInstance);
 
       mapInstance.fitBounds(routeLayerRef.current.getBounds(), {
-        padding: [24, 24],
+        paddingTopLeft: [24, 24],
+        paddingBottomRight: [120, 160],
       });
       setRouteDrawn(true);
       setRouteError(null);
