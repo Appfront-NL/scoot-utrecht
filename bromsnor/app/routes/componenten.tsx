@@ -14,6 +14,7 @@ import {
   AccountScreen, RideHistoryScreen, SettingsScreen, NotificationsScreen,
   AchievementsScreen, RuleChangesScreen, OfflineMapScreen,
   Warning,
+  AnimateIn, CountUp, PulseDot, RouteLoader, SuccessCheck, Shake,
   type Destination, type LayerState,
 } from "~/components/scoot";
 
@@ -26,6 +27,16 @@ const DEMO_DESTINATIONS: Destination[] = [
   { name: "Domplein", area: "Binnenstad", point: [5.12222, 52.09062] },
   { name: "Utrecht Centraal", area: "Stationsgebied", point: [5.10999, 52.08949] },
 ];
+const demoChip: React.CSSProperties = {
+  display: "inline-block", padding: "8px 14px", borderRadius: 99,
+  background: "#f5f3ff", border: "1px solid #c4b5fd",
+  font: "600 13px 'DM Sans'", color: "#6d3ae6",
+};
+const demoKnop: React.CSSProperties = {
+  padding: "8px 14px", borderRadius: 99, border: "1px solid #cbd5e1",
+  background: "#fff", font: "600 13px 'DM Sans'", cursor: "pointer",
+};
+
 const DEMO_CITY = {
   name: "Utrecht",
   rules: [
@@ -76,6 +87,8 @@ export default function Componenten() {
   const [uur, setUur] = useState(14.33);
   const [kaal, setKaal] = useState(0); // demo-teller RouteCalc
   const [vehicle, setVehicle] = useState("snorfiets");
+  const [replay, setReplay] = useState(0);     // demo: animaties opnieuw
+  const [shakeCount, setShakeCount] = useState(0);
 
   return (
     <main className="kit-scope" style={{ maxWidth: 520, margin: "0 auto", padding: "30px 18px 80px", fontFamily: "'DM Sans', sans-serif" }}>
@@ -91,6 +104,36 @@ export default function Componenten() {
           <Warning variant="nadert" distance={80} zone="Voetgangersgebied Steenweg" onAction={() => show("scoot-action")} />
           <Warning variant="rijbaan" />
           <Warning variant="geen-route" />
+        </div>
+      </Blok>
+
+      <Blok titel="Animaties — AnimateIn / CountUp / PulseDot / RouteLoader / SuccessCheck / Shake" imp={`import { AnimateIn, CountUp, PulseDot, RouteLoader, SuccessCheck, Shake, pulseDotHTML } from "~/components/scoot"`}>
+        <div style={{ display: "grid", gap: 18 }}>
+          <div key={replay} style={{ display: "flex", alignItems: "center", gap: 22, flexWrap: "wrap" }}>
+            <AnimateIn from="bottom"><span style={demoChip}>from="bottom"</span></AnimateIn>
+            <AnimateIn from="left" delayMs={120}><span style={demoChip}>from="left"</span></AnimateIn>
+            <AnimateIn from="pop" delayMs={240}><span style={demoChip}>from="pop"</span></AnimateIn>
+            <SuccessCheck size={44} />
+            <span style={{ font: "600 20px 'DM Sans'" }}>
+              <CountUp to={5.8} decimals={1} suffix=" km" />
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 26, flexWrap: "wrap" }}>
+            <RouteLoader size={38} />
+            <PulseDot color="#ef4444" />
+            <PulseDot color="#8b5cf6" />
+            <Shake trigger={shakeCount}>
+              <span style={demoChip}>Shake bij fout</span>
+            </Shake>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button style={demoKnop} onClick={() => setReplay(r => r + 1)}>Opnieuw afspelen</button>
+            <button style={demoKnop} onClick={() => setShakeCount(c => c + 1)}>Trigger shake</button>
+          </div>
+          <p style={{ fontSize: 12.5, color: "#64748b", margin: 0, lineHeight: 1.5 }}>
+            <code>pulseDotHTML()</code> geeft dezelfde dot als HTML-string, voor een Leaflet{" "}
+            <code>divIcon</code> — zie het JSDoc-voorbeeld in <code>PulseDot.tsx</code>.
+          </p>
         </div>
       </Blok>
 

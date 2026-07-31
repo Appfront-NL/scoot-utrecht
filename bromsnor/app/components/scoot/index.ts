@@ -57,3 +57,11 @@ export { useWrapped } from "./hooks";
 
 // shared types
 export type { Destination, ZoneProps, BannerState, LayerState } from "./types";
+
+// animations (standalone; PulseDot also ships pulseDotHTML for Leaflet divIcons)
+export { AnimateIn } from "./animations/AnimateIn";
+export { CountUp } from "./animations/CountUp";
+export { PulseDot, pulseDotHTML } from "./animations/PulseDot";
+export { RouteLoader } from "./animations/RouteLoader";
+export { SuccessCheck } from "./animations/SuccessCheck";
+export { Shake } from "./animations/Shake";

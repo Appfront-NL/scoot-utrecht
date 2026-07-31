@@ -1,0 +1,101 @@
+/* ============================================================
+   SCOOT animations — shared keyframes and utility classes.
+   Imported by the components in this folder; the `sc-` prefix
+   keeps the class names out of everyone else's way, so this
+   file is safe to load next to any other styling (Leaflet,
+   Tailwind, app.css).
+
+   Every animation respects prefers-reduced-motion: elements
+   simply appear in their final state.
+   ============================================================ */
+
+/* ---------- AnimateIn ---------- */
+.sc-animate-in {
+  animation: var(--sc-anim) var(--sc-duration, 400ms) cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--sc-delay, 0ms);
+}
+.sc-animate-in--bottom { --sc-anim: sc-from-bottom; }
+.sc-animate-in--top    { --sc-anim: sc-from-top; }
+.sc-animate-in--left   { --sc-anim: sc-from-left; }
+.sc-animate-in--right  { --sc-anim: sc-from-right; }
+.sc-animate-in--fade   { --sc-anim: sc-fade; }
+.sc-animate-in--pop    { --sc-anim: sc-pop; animation-timing-function: cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+@keyframes sc-from-bottom { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes sc-from-top    { from { opacity: 0; transform: translateY(-18px); } to { opacity: 1; transform: none; } }
+@keyframes sc-from-left   { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: none; } }
+@keyframes sc-from-right  { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: none; } }
+@keyframes sc-fade        { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sc-pop         { from { opacity: 0; transform: scale(0.85); } to { opacity: 1; transform: scale(1); } }
+
+/* ---------- PulseDot ---------- */
+.sc-pulse-dot {
+  position: relative;
+  display: inline-block;
+  border-radius: 50%;
+  background: var(--sc-pulse-color, #ef4444);
+  box-shadow: 0 0 0 2px #fff;
+}
+.sc-pulse-dot::before,
+.sc-pulse-dot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--sc-pulse-color, #ef4444);
+  animation: sc-pulse-ring 1.8s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
+}
+.sc-pulse-dot::after { animation-delay: 0.6s; }
+@keyframes sc-pulse-ring {
+  from { transform: scale(1); opacity: 0.55; }
+  to   { transform: scale(2.6); opacity: 0; }
+}
+
+/* ---------- Shake (error attention) ---------- */
+.sc-shake { animation: sc-shake 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+@keyframes sc-shake {
+  10%, 90% { transform: translateX(-1px); }
+  20%, 80% { transform: translateX(2px); }
+  30%, 50%, 70% { transform: translateX(-4px); }
+  40%, 60% { transform: translateX(4px); }
+}
+
+/* ---------- SuccessCheck ---------- */
+.sc-check-circle {
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  animation: sc-draw 600ms cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+.sc-check-mark {
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: sc-draw 350ms cubic-bezier(0.65, 0, 0.45, 1) 550ms forwards;
+}
+.sc-check-pop { animation: sc-pop 400ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+@keyframes sc-draw { to { stroke-dashoffset: 0; } }
+
+/* ---------- RouteLoader ---------- */
+.sc-route-loader {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #64748b;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.sc-route-loader__scooter { animation: sc-bob 900ms ease-in-out infinite; }
+@keyframes sc-bob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-3px) rotate(-2deg); }
+}
+.sc-route-loader__road { stroke-dasharray: 10 8; animation: sc-road 700ms linear infinite; }
+@keyframes sc-road { to { stroke-dashoffset: -18; } }
+
+/* ---------- reduced motion: skip to the end state ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .sc-animate-in, .sc-shake, .sc-check-pop { animation-duration: 1ms; animation-delay: 0ms; }
+  .sc-check-circle, .sc-check-mark { animation-duration: 1ms; animation-delay: 0ms; }
+  .sc-pulse-dot::before, .sc-pulse-dot::after,
+  .sc-route-loader__scooter, .sc-route-loader__road { animation: none; }
+}
