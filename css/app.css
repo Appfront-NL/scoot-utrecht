@@ -655,9 +655,10 @@ button {
 
 /* demo speed */
 .demo-speed {
+  /* left side: the float controls live on the right */
   position: fixed;
   z-index: 22;
-  right: 14px;
+  left: 14px;
   bottom: calc(118px + env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
