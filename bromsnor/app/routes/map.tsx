@@ -29,8 +29,8 @@ export default function Map() {
     null,
   );
 
-  const forbiddenZonesBoundingBoxes: IWarningBoundingBox =
-    loadForbiddenZonesBoundingBoxes();
+  const forbiddenZonesBoundingBoxes: IWarningBoundingBox[] =
+    loadForbiddenZonesBoundingBoxes() ?? [];
 
   const [from, setFrom] = useState("Westerdoksdijk 599, 1013 BX Amsterdam");
   const [to, setTo] = useState("");
@@ -66,26 +66,28 @@ export default function Map() {
           },
         ).addTo(mapInstanceRef.current);
 
-        forbiddenZonesBoundingBoxes.warnings.forEach((warning) => {
-          warning.bbox.forEach((zone) => {
-            L.rectangle(
-              [
-                [zone.minLat, zone.minLng],
-                [zone.maxLat, zone.maxLng],
-              ],
-              {
-                color: "#DC2626",
-                weight: 2,
-                fillColor: "#DC2626",
-                fillOpacity: 0.2,
-              },
-            ).addTo(mapInstanceRef.current);
+        forbiddenZonesBoundingBoxes.forEach((item) => {
+          item.warning.forEach((warning) => {
+            warning.bbox.forEach((zone) => {
+              L.rectangle(
+                [
+                  [zone.minLat, zone.minLng],
+                  [zone.maxLat, zone.maxLng],
+                ],
+                {
+                  color: "#DC2626",
+                  weight: 2,
+                  fillColor: "#DC2626",
+                  fillOpacity: 0.2,
+                },
+              ).addTo(mapInstanceRef.current);
+            });
           });
-        });
 
-        setTimeout(() => {
-          mapInstanceRef.current?.invalidateSize();
-        }, 0);
+          setTimeout(() => {
+            mapInstanceRef.current?.invalidateSize();
+          }, 0);
+        });
       } catch {
         setRouteError("Could not initialize map.");
       }
@@ -337,6 +339,7 @@ export default function Map() {
           to={to}
           routeDrawn={routeDrawn}
           routeCoordinates={points}
+          forbiddenZonesBoundingBoxes={forbiddenZonesBoundingBoxes}
         />
         <MapControls
           from={from}

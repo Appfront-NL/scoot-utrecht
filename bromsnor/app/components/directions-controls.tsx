@@ -1,12 +1,14 @@
-import { LucideScooter } from "lucide-react";
+import { Signpost } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { JSX } from "react/jsx-runtime";
+import type { IWarningBoundingBox } from "~/utils/load-bounding-boxes";
 
 type DirectionsControlsProps = {
     from: string;
     to: string;
     routeDrawn: boolean;
     routeCoordinates: [number, number][];
+    forbiddenZonesBoundingBoxes?: IWarningBoundingBox[];
 };
 
 export function DirectionsControls({
@@ -14,6 +16,7 @@ export function DirectionsControls({
     to,
     routeDrawn,
     routeCoordinates,
+    forbiddenZonesBoundingBoxes,
 }: DirectionsControlsProps): JSX.Element | null {
     void from;
     void to;
@@ -54,14 +57,6 @@ export function DirectionsControls({
             return [] as string[];
         }
 
-        const points = currentLocation
-            ? [currentLocation, ...routeCoordinates]
-            : [...routeCoordinates];
-
-        if (points.length < 2) {
-            return [] as string[];
-        }
-
         const toRad = (deg: number): number => (deg * Math.PI) / 180;
         const toDeg = (rad: number): number => (rad * 180) / Math.PI;
         const normalizeAngle = (angle: number): number => {
@@ -70,6 +65,65 @@ export function DirectionsControls({
             while (value > 180) value -= 360;
             return value;
         };
+
+        const haversineDistanceInMeters = (
+            a: [number, number],
+            b: [number, number],
+        ): number => {
+            const [lat1, lng1] = a;
+            const [lat2, lng2] = b;
+            const dLat = toRad(lat2 - lat1);
+            const dLng = toRad(lng2 - lng1);
+            const rLat1 = toRad(lat1);
+            const rLat2 = toRad(lat2);
+
+            const h =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(rLat1) *
+                Math.cos(rLat2) *
+                Math.sin(dLng / 2) *
+                Math.sin(dLng / 2);
+
+            return 6371000 * (2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h)));
+        };
+
+        const isPointNearOrInsideBox = (
+            point: [number, number],
+            box: {
+                minLat: number;
+                minLng: number;
+                maxLat: number;
+                maxLng: number;
+            },
+            nearThresholdMeters = 150,
+        ): boolean => {
+            const [lat, lng] = point;
+            const minLat = Math.min(box.minLat, box.maxLat);
+            const maxLat = Math.max(box.minLat, box.maxLat);
+            const minLng = Math.min(box.minLng, box.maxLng);
+            const maxLng = Math.max(box.minLng, box.maxLng);
+
+            const inside =
+                lat >= minLat && lat <= maxLat && lng >= minLng && lng <= maxLng;
+            if (inside) return true;
+
+            const clampedLat = Math.max(minLat, Math.min(lat, maxLat));
+            const clampedLng = Math.max(minLng, Math.min(lng, maxLng));
+            const distance = haversineDistanceInMeters(point, [
+                clampedLat,
+                clampedLng,
+            ]);
+
+            return distance <= nearThresholdMeters;
+        };
+
+        const points = currentLocation
+            ? [currentLocation, ...routeCoordinates]
+            : [...routeCoordinates];
+
+        if (points.length < 2) {
+            return [] as string[];
+        }
 
         const bearing = (a: [number, number], b: [number, number]): number => {
             const [lat1, lng1] = a;
@@ -89,6 +143,41 @@ export function DirectionsControls({
         const steps: string[] = [];
         if (currentLocation) {
             steps.push("Start from your current location");
+        }
+
+        const forbiddenBoxes =
+            forbiddenZonesBoundingBoxes?.flatMap((item) =>
+                item.warning.flatMap((w) => w.bbox),
+            ) ?? [];
+
+        if (forbiddenBoxes.length > 0) {
+            const isNearNow = currentLocation
+                ? forbiddenBoxes.some((box) =>
+                    isPointNearOrInsideBox(currentLocation, {
+                        minLat: box.minLat,
+                        minLng: box.minLng,
+                        maxLat: box.maxLat,
+                        maxLng: box.maxLng,
+                    }),
+                )
+                : false;
+
+            const routeNearForbidden = routeCoordinates.some((point) =>
+                forbiddenBoxes.some((box) =>
+                    isPointNearOrInsideBox(point, {
+                        minLat: box.minLat,
+                        minLng: box.minLng,
+                        maxLat: box.maxLat,
+                        maxLng: box.maxLng,
+                    }),
+                ),
+            );
+
+            if (isNearNow || routeNearForbidden) {
+                steps.push(
+                    "Warning: Forbidden zone nearby on your route. Reroute to avoid restricted area.",
+                );
+            }
         }
 
         if (points.length === 2) {
@@ -118,7 +207,12 @@ export function DirectionsControls({
 
         steps.push("Arrive at destination");
         return steps;
-    }, [currentLocation, routeCoordinates]);
+    }, [
+        currentLocation,
+        forbiddenZonesBoundingBoxes,
+        routeCoordinates,
+        routeDrawn,
+    ]);
 
     const closestInstruction = instructions[0] ?? null;
 
@@ -129,7 +223,7 @@ export function DirectionsControls({
     return (
         <div className="absolute right-4 top-4 z-1000 max-h-[50vh] w-[min(90vw,360px)] overflow-y-auto rounded-lg bg-white border border-[#E2E8F0] p-4">
             <div className="grid grid-cols-[auto_1fr] items-start gap-3">
-                <LucideScooter
+                <Signpost
                     className="mb-2  text-[#7C3AED] bg-[#F5F3FF] p-2 rounded-xl"
                     size={40}
                 />

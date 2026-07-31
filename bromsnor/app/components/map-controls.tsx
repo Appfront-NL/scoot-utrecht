@@ -47,14 +47,14 @@ function MapControls({
 
     return (
         <div
-            className={`absolute left-0 bottom-0 z-1000 ${routeDrawn ? "h-50" : "h-70"} w-screen rounded-lg bg-white/95 p-3 shadow-md rounded-t-2xl border-t border-t-gray-300 px-6 py-6`}
+            className={`absolute left-0 bottom-0 z-1000 ${routeDrawn ? "h-50" : "h-70"} w-screen rounded-lg bg-white/95 shadow-md rounded-t-2xl border-t border-t-gray-300 px-6 py-4`}
         >
             <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                 <div className="flex flex-col justify-between h-full">
                     {routeDrawn && distance !== null ? (
                         <div className="grid w-full grid-cols-3 gap-3 items-stretch">
                             <div className="flex h-full flex-col gap-1 border-r border-gray-300 p-4">
-                                <span className=" font-bold text-2xl text-[#3B82F6]">
+                                <span className=" font-bold text-xl text-[#3B82F6]">
                                     {travelTimeInMinutes
                                         ? travelTimeInMinutes + " min"
                                         : "12 min"}
@@ -62,13 +62,13 @@ function MapControls({
                                 <span className="text-[#94A3B8]">Reistijd</span>
                             </div>
                             <div className="flex h-full flex-col gap-1 border-r border-gray-300 p-4">
-                                <span className="text-black font-bold text-2xl">
+                                <span className="text-black font-bold text-xl">
                                     {distance.toFixed(2)} km
                                 </span>
-                                <span className="text-[#94A3B8]">Reisafstand</span>
+                                <span className="text-[#94A3B8]">Afstand</span>
                             </div>
                             <div className="flex h-full flex-col gap-1 p-4">
-                                <span className="text-black font-bold text-2xl">
+                                <span className="text-black font-bold text-xl">
                                     {arrivalTime ? formatTimeHHmm(arrivalTime) : "12:00"}
                                 </span>
                                 <span className="text-[#94A3B8]">Aankomst</span>
