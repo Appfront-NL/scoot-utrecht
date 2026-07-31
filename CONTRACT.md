@@ -65,3 +65,28 @@ Bij een fout: HTTP-statuscode buiten de 200-serie en een body met een `fout`-vel
 ## CORS
 
 De app draait op een ander domein dan de API. Zet `Access-Control-Allow-Origin` open, anders blokkeert de browser het verzoek.
+
+---
+
+## Regeldata (spoor C naar spoor B)
+
+De verkeersbesluit-agent levert regels als GeoJSON `FeatureCollection`.
+Voorbeeld: [`mock/regels-utrecht.geojson`](mock/regels-utrecht.geojson).
+
+Elke feature is een `Polygon` (gebied) of `LineString` (wegvak) met deze eigenschappen:
+
+| Eigenschap | Type | Betekenis |
+|---|---|---|
+| `id` | string | Kenmerk uit het besluit, bijvoorbeeld `R1` |
+| `naam` | string | Menselijke omschrijving, bruikbaar als label op de kaart |
+| `voertuig` | `snorfiets` \| `bromfiets` | Voor welk voertuig de regel geldt |
+| `regime` | `verboden` \| `rijbaan` \| `fietspad` | Wat er mag |
+| `tijdvenster` | string of `null` | Bijvoorbeeld `ma-za 11:00-18:00`, `null` is doorlopend |
+| `geldig_vanaf` | ISO-datum | Besluiten kunnen in de toekomst ingaan |
+| `zekerheid` | `hard` \| `zacht` | Of de agent het regime met zekerheid uit de tekst haalt |
+| `bron` | string | Herkomst, bijvoorbeeld het zaaknummer |
+
+Twee dingen die de app hieruit haalt en die makkelijk over het hoofd worden gezien:
+
+- `regime: rijbaan` betekent voor de rijder **helmplicht**, dus dat is geen kleurtje maar een waarschuwing.
+- `zekerheid: zacht` hoort de rijder anders te zien dan een harde regel. De app doet daar geen stellige uitspraak over.
