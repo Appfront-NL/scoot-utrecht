@@ -14,6 +14,7 @@ import { fetchRoute, loadRules } from './api.js';
 import * as map from './map.js';
 import { buildManeuvers, startSimulation, fmtDistance, fmtDuration, fmtArrival } from './navigation.js';
 import { initWrapped, openWrapped } from './wrapped.js';
+import { showWarning, warningVisible } from './warning-card.js';
 import { initProfile, openAccount, openNotifications } from './profile.js';
 
 const $ = (s) => document.querySelector(s);
@@ -350,61 +351,42 @@ async function recalcRoute() {
   startRide();   // fresh simulation from the new route's start = current position
 }
 
-/* ---------- warning card (design 08/12/14) ----------
-   Light tinted card at the top; the nav banner steps aside while
-   it shows. Variants: red = niet-toegestane zone (with reroute),
-   amber = naar de rijbaan (dismiss), grey = geen route gevonden. */
-let zoneCardTimer = null;
-let zoneCardAction = null;   // what the big CTA does right now
+/* ---------- warnings: standalone <scoot-warning> component ----------
+   The card itself lives in js/warning-card.js (shadow DOM, reusable
+   in any host — see demo/warning.html). Here we only decide WHICH
+   variant to show and what its CTA does. */
+let activeWarning = null;
 
 function showZoneCard(w) {
-  const el = $('#zone-card');
-  const isRijbaan = w.type === 'rijbaan';
-  el.classList.remove('hidden', 'noroute');
-  el.classList.toggle('rijbaan', isRijbaan);
   $('#nav-banner').classList.add('hidden');
-
-  if (isRijbaan) {
-    $('#zone-title').textContent = 'Je gaat naar de rijbaan';
-    $('#zone-body').textContent =
-      'Vanaf hier rijdt de snorfiets op de rijbaan. Daarmee geldt een helmplicht op dit weggedeelte.';
-    $('#zone-cta-text').textContent = 'Begrepen';
-    zoneCardAction = hideZoneCard;
-  } else {
-    $('#zone-title').textContent = 'Je rijdt in een niet-toegestane zone';
-    $('#zone-body').textContent =
-      'Deze rijzone is niet toegestaan voor jouw type scooter. Verlaat de zone zodra dit veilig kan.';
-    $('#zone-cta-text').textContent = 'Route herbereken';
-    zoneCardAction = recalcRoute;
-  }
-
-  el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
-  clearTimeout(zoneCardTimer);
-  zoneCardTimer = setTimeout(hideZoneCard, 9000);
+  const isRijbaan = w.type === 'rijbaan';
+  activeWarning = showWarning({
+    variant: isRijbaan ? 'rijbaan' : 'verboden',
+    duration: 9000,
+    onAction: () => { activeWarning?.dismiss(); if (!isRijbaan) recalcRoute(); },
+    onDismiss: () => {
+      activeWarning = null;
+      if (!$('#panel-ride').classList.contains('hidden')) {
+        $('#nav-banner').classList.remove('hidden');
+      }
+    },
+  });
 }
 
 /** Grey variant for the contract's { fout } response (design 14). */
 function showNoRoute(message) {
   showPanel('#panel-search');
-  const el = $('#zone-card');
-  el.classList.remove('hidden', 'rijbaan');
-  el.classList.add('noroute');
-  $('#zone-title').textContent = 'Geen route gevonden';
-  $('#zone-body').textContent = message && !/^Route-API/.test(message)
-    ? message
-    : 'We vonden geen route die alle verboden zones vermijdt. Kies een bestemming iets verderop, of loop het laatste stuk.';
-  $('#zone-cta-text').textContent = 'Andere bestemming';
-  zoneCardAction = () => { hideZoneCard(); showPanel('#panel-search'); };
-  clearTimeout(zoneCardTimer);
+  activeWarning = showWarning({
+    variant: 'geen-route',
+    body: message && !/^Route-API/.test(message) ? message : undefined,
+    onAction: () => { activeWarning?.dismiss(); showPanel('#panel-search'); },
+    onDismiss: () => { activeWarning = null; },
+  });
 }
 
 function hideZoneCard() {
-  clearTimeout(zoneCardTimer);
-  $('#zone-card').classList.add('hidden');
-  // banner terug zodra we nog rijden
-  if (!$('#panel-ride').classList.contains('hidden')) {
-    $('#nav-banner').classList.remove('hidden');
-  }
+  activeWarning?.dismiss();
+  activeWarning = null;
 }
 
 /* ---------- rules screen (the design's Welkom-page) ---------- */
@@ -458,8 +440,6 @@ function bindEvents() {
   $('#start-route').addEventListener('click', startRide);
   $('#stop-route').addEventListener('click', stopRide);
   $('#new-route').addEventListener('click', newRoute);
-  $('#zone-close').addEventListener('click', hideZoneCard);
-  $('#zone-cta').addEventListener('click', () => zoneCardAction?.());
 
   // floating map controls
   $('#btn-layers').addEventListener('click', () => openSheet('#panel-layers'));
@@ -526,13 +506,15 @@ async function runRulesDownload() {
     return `<i class="${cls}" style="animation-delay:${(i * 55)}ms"></i>`;
   }).join('');
   const counter = $('#rules-loading-n');
-  const total = 340, duur = 2300, t0 = performance.now();
+  // setInterval, not rAF: rAF stalls in covered windows and the
+  // onboarding would hang on this screen (same lesson as the ride).
+  const total = 340, duration = 2300, t0 = performance.now();
   await new Promise((done) => {
-    (function tick() {
-      const p = Math.min(1, (performance.now() - t0) / duur);
+    const iv = setInterval(() => {
+      const p = Math.min(1, (performance.now() - t0) / duration);
       counter.textContent = Math.round(total * (1 - Math.pow(1 - p, 2)));
-      if (p < 1) requestAnimationFrame(tick); else done();
-    })();
+      if (p >= 1) { clearInterval(iv); done(); }
+    }, 40);
   });
   await pause(350);
   screen.classList.add('hidden');

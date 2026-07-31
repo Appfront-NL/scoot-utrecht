@@ -55,6 +55,12 @@ Utrecht is de voorbeeldstad voor de hackathon, geen beperking. Alles wat stadsge
 Een stad toevoegen = één entry daar + een regels-GeoJSON in hetzelfde schema (`CONTRACT.md`).
 Met geolocatie aan schakelt de app automatisch naar de stad waar je bent, als die bekend is.
 
+## Losse componenten
+
+De zonewaarschuwing is een zelfstandige web component (`js/warning-card.js`,
+shadow DOM, nul dependencies) en werkt in elke host, ook React. Demo met alle
+varianten en gebruiksvoorbeelden: [`demo/warning.html`](demo/warning.html).
+
 ## Afspraken
 
 - Werk op een eigen branch en open een PR naar `main`.

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>&lt;scoot-warning&gt; — losse component-demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* Bewust een kale pagina: alles wat je hieronder ziet komt uit de
+     component zelf. Geen app.css, geen frameworks. */
+  body{margin:0;font-family:'DM Sans',system-ui,sans-serif;background:#f5f3ff;color:#0f172a;
+       -webkit-font-smoothing:antialiased;padding:34px 20px 60px}
+  main{max-width:480px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+  h1{font-size:24px;font-weight:600;letter-spacing:-.02em;margin:0}
+  p.lead{font-size:14.5px;line-height:1.55;color:#64748b;margin:0 0 8px}
+  h2{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#8b5cf6;margin:20px 0 0}
+  pre{background:#0f172a;color:#e2e8f0;border-radius:12px;padding:16px;font-size:12.5px;
+      line-height:1.6;overflow-x:auto;margin:6px 0 0}
+  .knoppen{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .knoppen button{border:1px solid #cbd5e1;background:#fff;border-radius:99px;padding:9px 15px;
+      font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
+  .knoppen button:hover{border-color:#8b5cf6;color:#8b5cf6}
+  #log{font-size:12.5px;color:#64748b;min-height:18px}
+</style>
+</head>
+<body>
+<main>
+  <h1>&lt;scoot-warning&gt;</h1>
+  <p class="lead">De zonewaarschuwing als losse, zelfstandige web component.
+  Shadow DOM, eigen styling, nul dependencies — werkt in vanilla, React
+  (gewoon als element renderen) of waar dan ook. Dit is de volledige demo-broncode.</p>
+
+  <h2>Statisch in je markup</h2>
+  <scoot-warning variant="nadert" distance="80" zone="Voetgangersgebied Steenweg"></scoot-warning>
+  <scoot-warning variant="rijbaan"></scoot-warning>
+  <scoot-warning variant="venstertijd" window="ma-za 11:00-18:00"></scoot-warning>
+  <scoot-warning variant="geen-route"></scoot-warning>
+
+  <h2>Imperatief (met auto-dismiss + events)</h2>
+  <div class="knoppen">
+    <button data-v="verboden">verboden</button>
+    <button data-v="nadert">nadert (120 m)</button>
+    <button data-v="rijbaan">rijbaan</button>
+    <button data-v="venstertijd">venstertijd</button>
+    <button data-v="geen-route">geen-route</button>
+  </div>
+  <div id="log"></div>
+
+  <h2>Gebruik</h2>
+  <pre>// 1. statisch (ook in React/JSX):
+import './warning-card.js';
+&lt;scoot-warning variant="nadert" distance="80"
+  zone="Voetgangersgebied Steenweg" /&gt;
+// events: onScoot-action / addEventListener('scoot-action')
+
+// 2. imperatief, verschijnt bovenin beeld:
+import { showWarning } from './warning-card.js';
+showWarning({
+  variant: 'verboden',        // verboden | rijbaan | venstertijd | nadert | geen-route
+  zone: 'Voetgangersgebied Steenweg',
+  distance: 80,               // alleen 'nadert'
+  window: 'ma-za 11:00-18:00',// alleen 'venstertijd'
+  duration: 9000,             // ms, 0 = blijft staan
+  onAction: () =&gt; herbereken(),
+  onDismiss: () =&gt; {},
+});
+
+// copy overschrijven kan altijd:
+showWarning({ variant: 'verboden', title: '...', body: '...', cta: '...' });</pre>
+</main>
+
+<script type="module">
+  import { showWarning } from '../js/warning-card.js';
+  const log = document.getElementById('log');
+  document.querySelectorAll('.knoppen button').forEach(b =>
+    b.addEventListener('click', () => {
+      showWarning({
+        variant: b.dataset.v,
+        distance: 120,
+        zone: 'Voetgangersgebied Steenweg',
+        window: 'ma-za 11:00-18:00',
+        duration: 6000,
+        onAction: () => { log.textContent = `scoot-action ← ${b.dataset.v}`; },
+        onDismiss: () => { log.textContent = `scoot-dismiss ← ${b.dataset.v}`; },
+      });
+    }));
+</script>
+</body>
+</html>

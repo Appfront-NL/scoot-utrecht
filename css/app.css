@@ -896,46 +896,6 @@ button {
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 
-/* ---------- light warning card (design 08/12/13/14) ---------- */
-.zone-card{
-  position:fixed;z-index:21;left:14px;right:14px;
-  top:calc(64px + env(safe-area-inset-top));
-  background:#fdf4f4;
-  border:1px solid rgba(239,68,68,.25);
-  border-radius:18px;
-  padding:16px 16px 14px;
-  box-shadow:0 18px 44px -12px rgba(15,23,42,.28);
-  animation:zone-in .45s cubic-bezier(.34,1.35,.45,1);
-}
-@keyframes zone-in{from{transform:translateY(-16px) scale(.97);opacity:0}}
-.zone-card-head{display:flex;align-items:center;gap:10px}
-.zone-card-icon{color:#b91c1c;flex:none;display:grid;place-items:center}
-.zone-card-title{flex:1;font-size:16px;font-weight:700;color:#7f1d1d;letter-spacing:-.01em;line-height:1.3}
-.zone-card-close{border:0;background:none;color:#b45c5c;font-size:21px;line-height:1;padding:2px 4px;cursor:pointer}
-.zone-card-body{margin:8px 2px 13px;font-size:14.5px;line-height:1.5;color:#8c3a3a}
-.zone-card-cta{
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  width:100%;height:48px;border:0;border-radius:10px;cursor:pointer;
-  background:#b91c1c;color:#fff;font-size:15.5px;font-weight:600;
-  transition:background .15s,transform .12s;
-}
-.zone-card-cta:hover{background:#991b1b}
-.zone-card-cta:active{transform:translateY(1px)}
-/* amber variant: naar de rijbaan */
-.zone-card.rijbaan{background:#fdf8ec;border-color:rgba(245,158,11,.3)}
-.zone-card.rijbaan .zone-card-icon{color:#b45309}
-.zone-card.rijbaan .zone-card-title{color:#78350f}
-.zone-card.rijbaan .zone-card-body{color:#8a5a1d}
-.zone-card.rijbaan .zone-card-cta{background:#b45309}
-.zone-card.rijbaan .zone-card-cta:hover{background:#92400e}
-/* grey variant: geen route gevonden */
-.zone-card.noroute{background:#fafbfc;border-color:var(--line-2)}
-.zone-card.noroute .zone-card-icon{color:var(--ink-2)}
-.zone-card.noroute .zone-card-title{color:var(--ink)}
-.zone-card.noroute .zone-card-body{color:var(--ink-3)}
-.zone-card.noroute .zone-card-cta{background:#6b7480}
-.zone-card.noroute .zone-card-cta:hover{background:#565e68}
-
 /* ---------- zone pills + destination flag on the map ---------- */
 .zone-pill{
   border:0;cursor:pointer;border-radius:6px;padding:4px 9px;
