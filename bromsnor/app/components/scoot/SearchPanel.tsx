@@ -9,18 +9,26 @@ import type { Destination } from "./types";
  * <SearchPanel destinations={city.destinations} filter={q}
  *   onFilter={setQ} onPick={plan} status={null} />
  */
-export function SearchPanel({ destinations, filter, onFilter, onPick, status }: {
+export function SearchPanel({ destinations, filter, onFilter, onPick, onSearch, prefiltered, status }: {
   destinations: Destination[];
   filter: string;
   onFilter: (v: string) => void;
   onPick: (d: Destination) => void;
+  /** Free-text search (address or "lat, lng"), fired on Enter or
+      via the search row. Wire it to a geocoder; without it the
+      panel only filters the suggestion list. */
+  onSearch?: (query: string) => void;
+  /** Skip the built-in text filter — pass this when `destinations`
+      already come from a live search on the current input. */
+  prefiltered?: boolean;
   status?: { text: string; error: boolean } | null;
 }) {
   const list = useMemo(() => {
+    if (prefiltered) return destinations;
     const f = filter.trim().toLowerCase();
     return destinations.filter((d) =>
       d.name.toLowerCase().includes(f) || d.area.toLowerCase().includes(f));
-  }, [destinations, filter]);
+  }, [destinations, filter, prefiltered]);
 
   return (
     <section className="panel">
@@ -31,6 +39,7 @@ export function SearchPanel({ destinations, filter, onFilter, onPick, status }: 
       </h1>
       <div className="search-field">
         <input value={filter} onChange={(e) => onFilter(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && onSearch && filter.trim()) onSearch(filter.trim()); }}
           type="text" placeholder="Zoek op locatie…" autoComplete="off" enterKeyHint="search" />
         <svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75" fill="none" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.8-3.8" /></svg>
       </div>
@@ -44,7 +53,16 @@ export function SearchPanel({ destinations, filter, onFilter, onPick, status }: 
             </span>
             <span><b>{d.name}</b><small>{d.area}</small></span>
           </button>
-        )) : <p className="hint">Geen locatie gevonden. Of tik op de kaart.</p>}
+        )) : null}
+        {onSearch && filter.trim() && (
+          <button className="suggestion" onClick={() => onSearch(filter.trim())}>
+            <span className="pin">
+              <svg width="17" height="17" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.75" fill="none" strokeLinecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.8-3.8" /></svg>
+            </span>
+            <span><b>Zoek “{filter.trim()}”</b><small>Adres of coördinaten (lat, lng)</small></span>
+          </button>
+        )}
+        {!list.length && filter.trim() && !onSearch ? <p className="hint">Geen locatie gevonden. Of tik op de kaart.</p> : null}
       </div>
       {status && <p className={"hint" + (status.error ? " error" : "")} aria-live="polite">{status.text}</p>}
       <p className="hint">Of tik op de kaart om een bestemming te kiezen.</p>

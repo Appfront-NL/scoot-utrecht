@@ -34,11 +34,11 @@ const visibleRegimes = { verboden: true, rijbaan: true, fietspad: true };
 let windowZonesVisible = true;
 
 /** Mounts the map on the given center, resolves once loaded. */
-export function initMap(center) {
+export function initMap(center, styleOverride) {
   return new Promise((done) => {
     map = new maplibregl.Map({
       container: 'map',
-      style: CONFIG.mapStyle,
+      style: styleOverride ?? CONFIG.mapStyle,
       center,
       zoom: 14.4,
       attributionControl: { compact: true },

@@ -3,6 +3,7 @@ import { type RouteConfig, index, route } from "@react-router/dev/routes";
 export default [
   index("routes/home.tsx"),
   route("map", "routes/map.tsx"),
+  route("scoot", "routes/scoot.tsx"),
   route("componenten", "routes/componenten.tsx"),
   route("login", "components/scoot/AuthScreen.tsx"),
   route("settings", "components/scoot/SettingsScreen.tsx"),

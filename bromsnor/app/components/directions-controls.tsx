@@ -25,6 +25,12 @@ export function DirectionsControls({
         [number, number] | null
     >(null);
 
+    // Dismissable: hidden until the next route is drawn.
+    const [dismissed, setDismissed] = useState(false);
+    useEffect(() => {
+        setDismissed(false);
+    }, [routeDrawn, routeCoordinates]);
+
     useEffect(() => {
         if (!navigator.geolocation) {
             return;
@@ -214,38 +220,48 @@ export function DirectionsControls({
 
     const closestInstruction = instructions[0] ?? null;
 
-    if (!routeDrawn || routeCoordinates.length === 0) {
+    if (!routeDrawn || routeCoordinates.length === 0 || dismissed) {
         return null;
     }
 
     const isWarning = instructions[0]?.includes("Warning") ?? false;
 
     return (
-        <div className="absolute right-4 top-[5%] z-1000 max-h-[50vh] w-[min(80vw,360px)] overflow-y-auto rounded-lg bg-white border border-[#E2E8F0] p-4">
-            <div className="grid grid-cols-[auto_1fr] items-start gap-3">
+        <div
+            className="fixed left-1/2 z-30 w-[min(430px,calc(100vw-24px))] -translate-x-1/2 overflow-hidden rounded-[24px] bg-white shadow-[0_10px_34px_rgba(15,23,42,0.16)]"
+            style={{ top: 72, fontFamily: "'DM Sans', sans-serif" }}
+            role="status"
+            aria-live="polite"
+        >
+            <button
+                type="button"
+                aria-label="Sluiten"
+                onClick={() => setDismissed(true)}
+                className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full text-[#64748b] hover:bg-[#f1f5f9]"
+            >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
+            </button>
+            <div className="grid grid-cols-[auto_1fr] items-start gap-3 p-4 pr-11">
                 {isWarning ? (
-                    <MessageSquareWarning
-                        className="mb-2 text-[#F43F5E] bg-[#FEF2F2] p-2 rounded-xl"
-                        size={40}
-                    />
+                    <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#fef2f2] text-[#ef4444]">
+                        <MessageSquareWarning size={22} />
+                    </span>
                 ) : (
-                    <Signpost
-                        className="mb-2  text-[#7C3AED] bg-[#F5F3FF] p-2 rounded-xl"
-                        size={40}
-                    />
+                    <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#f5f3ff] text-[#6d3ae6]">
+                        <Signpost size={22} />
+                    </span>
                 )}
-                <div>
-                    <h3 className="mb-2 text-[16px] font-semibold text-gray-800">
-                        {closestInstruction ? <span>{closestInstruction}</span> : null}
+                <div className="min-w-0">
+                    <h3 className="text-[15.5px] font-semibold leading-snug text-[#0f172a]">
+                        {closestInstruction}
                     </h3>
-                    <span>
+                    <p className="mt-1 text-[13px] leading-relaxed text-[#64748b]">
                         {instructions.length > 1 &&
                             instructions[1] &&
-                            instructions[1].length > 0 &&
                             instructions[1].includes("Warning")
-                            ? `${instructions[1]}`
-                            : "Next step: " + (instructions[1] ?? "No further instructions")}
-                    </span>
+                            ? instructions[1]
+                            : "Volgende: " + (instructions[1] ?? "geen verdere stappen")}
+                    </p>
                 </div>
             </div>
         </div>
