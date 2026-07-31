@@ -30,11 +30,23 @@ function MapControls({
             <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
                 <div className="flex flex-col justify-between h-full">
                     {routeDrawn && distance !== null ? (
-                        <div className="flex flex-col gap-2">
-                            <span className="text-black font-bold text-xl mb-1">
-                                {distance.toFixed(2)} km
-                            </span>
-                            <span className="text-[#94A3B8]">Reisafstand</span>
+                        <div className="grid w-full grid-cols-3 gap-3 items-stretch">
+                            <div className="flex h-full flex-col gap-1 border-r border-gray-300 p-4">
+                                <span className=" font-bold text-2xl text-[#3B82F6]">
+                                    12 min
+                                </span>
+                                <span className="text-[#94A3B8]">Reistijd</span>
+                            </div>
+                            <div className="flex h-full flex-col gap-1 border-r border-gray-300 p-4">
+                                <span className="text-black font-bold text-2xl">
+                                    {distance.toFixed(2)} km
+                                </span>
+                                <span className="text-[#94A3B8]">Reisafstand</span>
+                            </div>
+                            <div className="flex h-full flex-col gap-1 p-4">
+                                <span className="text-black font-bold text-2xl">15:47</span>
+                                <span className="text-[#94A3B8]">Aankomst</span>
+                            </div>
                         </div>
                     ) : (
                         <div>
