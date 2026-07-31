@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 
 /**
  * Login / register / forgot-password (demo, no real auth; design
@@ -71,4 +72,16 @@ export function AuthScreen({ onDone, onToast }: {
       </div>
     </section>
   );
+}
+
+/* ---------- route-module exports, same pattern as SettingsScreen:
+   the screen is also reachable as a standalone page. Logging in
+   (or registering) sends you to the map. ---------- */
+export async function loader() {
+  return null;
+}
+
+export default function LoginPage() {
+  const navigate = useNavigate();
+  return <AuthScreen onDone={() => navigate("/")} />;
 }

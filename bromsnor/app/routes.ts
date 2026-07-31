@@ -4,6 +4,7 @@ export default [
   index("routes/home.tsx"),
   route("map", "routes/map.tsx"),
   route("componenten", "routes/componenten.tsx"),
+  route("login", "components/scoot/AuthScreen.tsx"),
   route("settings", "components/scoot/SettingsScreen.tsx"),
   route("account", "components/scoot/AccountScreen.tsx"),
   route("rides", "components/scoot/RideHistoryScreen.tsx"),
