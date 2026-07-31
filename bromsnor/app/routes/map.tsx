@@ -32,59 +32,72 @@ export default function Map() {
 
   useEffect(() => {
     const initMap = async () => {
-      if (!mapRef.current || !TOMTOM_KEY) return;
+      if (!mapRef.current || !TOMTOM_KEY || mapInstanceRef.current) return;
 
-      const L = (await import("leaflet")).default;
-      leafletRef.current = L;
-      leafletRef.current = L;
+      try {
+        const L = (await import("leaflet")).default;
+        leafletRef.current = L;
 
-      mapInstanceRef.current = L.map(mapRef.current).setView(
-        [52.0907, 5.1214],
-        13,
-      );
-      mapInstanceRef.current = L.map(mapRef.current).setView(
-        [52.0907, 5.1214],
-        13,
-      );
+        const mapContainer = mapRef.current as HTMLDivElement & {
+          _leaflet_id?: number;
+        };
 
-      L.tileLayer(
-        `https://{s}.api.tomtom.com/map/1/tile/basic/main/{z}/{x}/{y}.png?key=${TOMTOM_KEY}`,
-        {
-          subdomains: ["a", "b", "c", "d"],
-          maxZoom: 20,
-          tileSize: 256,
-        },
-      ).addTo(mapInstanceRef.current);
+        if (mapContainer._leaflet_id) {
+          delete mapContainer._leaflet_id;
+        }
 
-      forbiddenZonesBoundingBoxes.warnings.forEach((warning) => {
-        warning.bbox.forEach((zone) => {
-          L.rectangle(
-            [
-              [zone.minLat, zone.minLng],
-              [zone.maxLat, zone.maxLng],
-            ],
-            {
-              color: "#DC2626",
-              weight: 2,
-              fillColor: "#DC2626",
-              fillOpacity: 0.2,
-            },
-          ).addTo(mapInstanceRef.current);
+        mapInstanceRef.current = L.map(mapRef.current).setView(
+          [52.0907, 5.1214],
+          13,
+        );
+
+        L.tileLayer(
+          `https://{s}.api.tomtom.com/map/1/tile/basic/main/{z}/{x}/{y}.png?key=${TOMTOM_KEY}`,
+          {
+            subdomains: ["a", "b", "c", "d"],
+            maxZoom: 20,
+            tileSize: 256,
+          },
+        ).addTo(mapInstanceRef.current);
+
+        forbiddenZonesBoundingBoxes.warnings.forEach((warning) => {
+          warning.bbox.forEach((zone) => {
+            L.rectangle(
+              [
+                [zone.minLat, zone.minLng],
+                [zone.maxLat, zone.maxLng],
+              ],
+              {
+                color: "#DC2626",
+                weight: 2,
+                fillColor: "#DC2626",
+                fillOpacity: 0.2,
+              },
+            ).addTo(mapInstanceRef.current);
+          });
         });
-      });
+
+        setTimeout(() => {
+          mapInstanceRef.current?.invalidateSize();
+        }, 0);
+      } catch {
+        setRouteError("Could not initialize map.");
+      }
     };
 
     void initMap();
 
+    const onResize = () => mapInstanceRef.current?.invalidateSize();
+    window.addEventListener("resize", onResize);
+
     return () => {
+      window.removeEventListener("resize", onResize);
       if (mapInstanceRef.current) mapInstanceRef.current.remove();
       mapInstanceRef.current = null;
       startMarkerRef.current = null;
       endMarkerRef.current = null;
-      if (mapInstanceRef.current) mapInstanceRef.current.remove();
-      mapInstanceRef.current = null;
-      startMarkerRef.current = null;
-      endMarkerRef.current = null;
+      routeLayerRef.current = null;
+      leafletRef.current = null;
     };
   }, []);
 
@@ -261,9 +274,6 @@ export default function Map() {
       </div>
     );
   }
-
-  const now = new Date();
-  const timeLabel = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
 
   /* ---------- render ---------- */
   return (
