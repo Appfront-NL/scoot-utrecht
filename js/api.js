@@ -78,6 +78,11 @@ async function mockRoute(start, end, vehicle, city) {
     ...densify(bend, end, 6).slice(1),
   ];
 
+  // Street names per leg. Fabricated, like the route itself — the
+  // design shows named maneuvers, and the contract has an optional
+  // `stratengids`-style field for when track B ships real names.
+  const streets = city?.streetNames ?? ['Oudegracht', 'Lange Nieuwstraat', 'Domstraat'];
+
   let distance = 0;
   for (let i = 1; i < coords.length; i++) distance += distanceM(coords[i - 1], coords[i]);
 
@@ -115,6 +120,8 @@ async function mockRoute(start, end, vehicle, city) {
     route: { type: 'LineString', coordinates: coords },
     afstand_m: Math.round(distance),
     waarschuwingen,
+    // optional per contract: street name for each leg of the line
+    straten: [streets[0], streets[1] ?? streets[0]],
   };
 }
 
@@ -156,5 +163,6 @@ function normalize(response) {
       type: w.type ?? 'verboden',
     })),
     zones: response.zones ?? null,
+    straten: response.straten ?? null,   // optional street names per leg
   };
 }

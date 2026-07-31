@@ -17,39 +17,50 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/wrapped.css">
+<link rel="stylesheet" href="css/profile.css">
 </head>
 <body>
 
 <!-- The map fills the screen; all UI floats on top. -->
 <div id="map"></div>
 
-<!-- Brand chip, top left -->
+<!-- Topbar per het design: meldingen links, stadsnaam midden, account + info rechts -->
 <header class="topbar">
-  <div class="brand">
-    <span class="brand-mark" aria-hidden="true">
-      <svg width="18" height="18" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17" r="3"/><circle cx="18.5" cy="17" r="3"/><path d="M8.5 17h7"/><path d="M18.5 17V9a2 2 0 0 0-2-2h-2"/><path d="M5.5 14l3.2-6.5h4.1"/><path d="M12.8 7.5 15 12"/></svg>
-    </span>
-    <span class="brand-name">SCOOT</span>
-  </div>
+  <button class="info-button" id="btn-notifications" aria-label="Meldingen">
+    <svg width="19" height="19" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+    <span class="notify-dot" aria-hidden="true"></span>
+  </button>
+  <span class="map-title" id="map-title">Utrecht</span>
   <div class="top-right">
-    <!-- Vehicle choice goes into the API request verbatim (see CONTRACT.md) -->
-    <div class="vehicle" role="radiogroup" aria-label="Voertuig">
-      <button class="vehicle-option active" data-vehicle="snorfiets" role="radio" aria-checked="true">Snorfiets</button>
-      <button class="vehicle-option" data-vehicle="bromfiets" role="radio" aria-checked="false">Bromfiets</button>
-    </div>
+    <button class="avatar-button" id="btn-account" aria-label="Account">FD</button>
     <button class="info-button" id="btn-rules" aria-label="Regels en wetgeving">
       <svg width="19" height="19" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M12 16v-4.5M12 8h.01"/></svg>
     </button>
   </div>
 </header>
 
+<!-- Zwevende kaartknoppen (design: FloatControls) -->
+<div class="float-stack" id="float-stack">
+  <button class="info-button hidden" id="btn-sound" aria-label="Gesproken aanwijzingen">
+    <svg width="19" height="19" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6.5 9H3v6h3.5L11 19V5Z"/><path d="M15.5 8.8a4.5 4.5 0 0 1 0 6.4"/></svg>
+  </button>
+  <button class="info-button" id="btn-layers" aria-label="Kaartlagen">
+    <svg width="19" height="19" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2.7 9 5-9 5-9-5 9-5Z"/><path d="m3 12.8 9 5 9-5"/><path d="m3 17.3 9 5 9-5"/></svg>
+  </button>
+  <button class="info-button" id="btn-locate" aria-label="Centreer op mijn locatie">
+    <svg width="19" height="19" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.4" fill="currentColor" stroke="none"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+  </button>
+</div>
+
 <!-- Navigation banner (visible while riding) -->
 <div class="nav-banner hidden" id="nav-banner" aria-live="polite">
   <div class="nav-banner-main">
     <span class="nav-banner-arrow" id="nav-arrow"></span>
-    <span>
+    <span style="min-width:0">
       <span class="nav-banner-distance" id="nav-distance">–</span>
       <span class="nav-banner-action" id="nav-action">Rechtdoor</span>
+      <span class="nav-banner-street" id="nav-street"></span>
     </span>
   </div>
   <div class="nav-banner-next hidden" id="nav-next"></div>
@@ -59,21 +70,16 @@
 <div class="zone-card hidden" id="zone-card" role="alert">
   <div class="zone-card-head">
     <span class="zone-card-icon" aria-hidden="true">
-      <svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.8 1.9 18a2 2 0 0 0 1.7 3h16.8a2 2 0 0 0 1.7-3L13.7 3.8a2 2 0 0 0-3.4 0Z"/><path d="M12 9.5V14M12 17.5h.01"/></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.8 1.9 18a2 2 0 0 0 1.7 3h16.8a2 2 0 0 0 1.7-3L13.7 3.8a2 2 0 0 0-3.4 0Z"/><path d="M12 9.5V14M12 17.5h.01"/></svg>
     </span>
-    <div class="zone-card-copy">
-      <span class="zone-card-kicker" id="zone-kicker">Verboden zone</span>
-      <span class="zone-card-text" id="zone-text"></span>
-    </div>
+    <span class="zone-card-title" id="zone-title">Je rijdt in een niet-toegestane zone</span>
+    <button class="zone-card-close" id="zone-close" aria-label="Waarschuwing sluiten">&times;</button>
   </div>
-  <div class="zone-card-actions">
-    <button class="zone-card-reroute" id="zone-reroute">
-      <svg width="17" height="17" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="19" r="2.6"/><circle cx="18" cy="5" r="2.6"/><path d="M8.5 18.4c5-1 6.5-3 7-6 .4-2.4 1-3.9 2-4.9"/></svg>
-      Nieuwe route
-    </button>
-    <button class="zone-card-dismiss" id="zone-close">Negeren</button>
-  </div>
-  <span class="zone-card-timer" aria-hidden="true"><i id="zone-timer-bar"></i></span>
+  <p class="zone-card-body" id="zone-body"></p>
+  <button class="zone-card-cta" id="zone-cta">
+    <span id="zone-cta-text">Route herbereken</span>
+    <svg width="18" height="18" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+  </button>
 </div>
 
 <!-- Rules screen: the design's "Welkom in Utrecht" page.
@@ -84,18 +90,188 @@
     <h2 class="rules-title" id="rules-title">Welkom</h2>
     <p class="rules-sub" id="rules-sub"></p>
     <div class="rules-list" id="rules-list"></div>
-    <button class="button" id="rules-ok">Ik heb het begrepen
+    <button class="button" id="rules-ok"><span id="rules-ok-text">Ik heb het begrepen</span>
       <svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
     </button>
   </div>
 </section>
+
+<!-- Onboarding 1: inloggen / registreren / wachtwoord vergeten (demo, geen echte auth) -->
+<section class="auth-screen hidden" id="auth-screen">
+  <div class="auth-inner">
+    <div class="auth-logo" aria-hidden="true">
+      <svg width="34" height="34" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17" r="3"/><circle cx="18.5" cy="17" r="3"/><path d="M8.5 17h7"/><path d="M18.5 17V9a2 2 0 0 0-2-2h-2"/><path d="M5.5 14l3.2-6.5h4.1"/><path d="M12.8 7.5 15 12"/></svg>
+    </div>
+    <p class="eyebrow">SCOOT</p>
+
+    <div class="auth-view" id="auth-login">
+      <h2 class="auth-title">Log in op je account</h2>
+      <p class="auth-sub">Voer je gegevens in om verder te gaan</p>
+      <div class="auth-fields">
+        <input class="auth-field" type="email" placeholder="E-mailadres" value="fabian@appfront.nl" autocomplete="off">
+        <input class="auth-field" type="password" placeholder="Wachtwoord" value="scoot2026" autocomplete="off">
+      </div>
+      <button class="auth-link" id="auth-to-forgot">Wachtwoord vergeten?</button>
+      <button class="button" id="auth-login-go">Inloggen
+        <svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+      </button>
+      <p class="auth-foot">Nog geen account? <button class="auth-link inline" id="auth-to-register">Registreer</button></p>
+    </div>
+
+    <div class="auth-view hidden" id="auth-register">
+      <h2 class="auth-title">Maak een account</h2>
+      <p class="auth-sub">Je hebt een rijbewijs AM of B nodig om te mogen rijden</p>
+      <div class="auth-fields">
+        <input class="auth-field" type="text" placeholder="Volledige naam" autocomplete="off">
+        <input class="auth-field" type="email" placeholder="E-mailadres" autocomplete="off">
+        <input class="auth-field" type="password" placeholder="Wachtwoord" autocomplete="off">
+        <input class="auth-field" type="text" placeholder="Rijbewijsnummer" autocomplete="off">
+      </div>
+      <button class="button" id="auth-register-go">Account aanmaken
+        <svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+      </button>
+      <p class="auth-foot">Al een account? <button class="auth-link inline" data-auth-back>Inloggen</button></p>
+    </div>
+
+    <div class="auth-view hidden" id="auth-forgot">
+      <h2 class="auth-title">Wachtwoord vergeten</h2>
+      <p class="auth-sub">Vul je e-mailadres in. Je ontvangt een link om een nieuw wachtwoord in te stellen</p>
+      <div class="auth-fields">
+        <input class="auth-field" type="email" placeholder="E-mailadres" autocomplete="off">
+      </div>
+      <button class="button" id="auth-forgot-go">Verstuur link</button>
+      <p class="auth-foot">Weet je het weer? <button class="auth-link inline" data-auth-back>Inloggen</button></p>
+    </div>
+  </div>
+</section>
+
+<!-- Onboarding 2: kenteken kiezen (design 33) -->
+<section class="plate-screen hidden" id="plate-screen">
+  <div class="plate-inner">
+    <p class="eyebrow">SCOOT</p>
+    <h2 class="plate-title">Welk kenteken heeft je scooter?</h2>
+    <p class="plate-sub">De kleur van je plaat bepaalt waar je mag rijden. Op sommige wegen mag de een wel en de ander niet.</p>
+
+    <button class="plate-card selected" data-vehicle="snorfiets">
+      <span class="plate plate--blue"><i>NL</i><b>52-ND-3</b></span>
+      <span class="plate-meta"><b>Snorfiets</b><small>Maximaal 25 km/u</small></span>
+      <span class="plate-check" aria-hidden="true">
+        <svg width="15" height="15" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 12.5 5 5 10-11"/></svg>
+      </span>
+    </button>
+    <button class="plate-card" data-vehicle="bromfiets">
+      <span class="plate plate--yellow"><i>NL</i><b>8-TFP-42</b></span>
+      <span class="plate-meta"><b>Bromfiets</b><small>Maximaal 45 km/u</small></span>
+      <span class="plate-check" aria-hidden="true">
+        <svg width="15" height="15" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 12.5 5 5 10-11"/></svg>
+      </span>
+    </button>
+
+    <div class="plate-note">
+      <b>Helm verplicht</b>
+      <span>Sinds 2023 ook voor snorfietsen met een blauwe plaat.</span>
+    </div>
+    <button class="button" id="plate-go">Verder</button>
+  </div>
+</section>
+
+<!-- Onboarding 3: regels ophalen (design 32) -->
+<section class="rules-loading hidden" id="rules-loading">
+  <div class="rules-loading-inner">
+    <div class="rules-loading-tiles" id="rules-loading-tiles" aria-hidden="true"></div>
+    <h2>We halen de regels van Utrecht op</h2>
+    <p>Elk verkeersbesluit van de gemeente wordt omgezet naar een zone op je kaart.</p>
+    <div class="rules-loading-count"><b id="rules-loading-n">0</b> van 340 besluiten</div>
+    <span class="rules-loading-once">Eenmalig</span>
+  </div>
+</section>
+
+<!-- Kaartlagen en legenda (design 25) -->
+<section class="panel sheet hidden" id="panel-layers">
+  <div class="grab" aria-hidden="true"></div>
+  <h2 class="panel-title">Wat zie je op de kaart</h2>
+  <p class="sheet-sub">Zet lagen aan of uit om te zien waar je met een snorfiets mag rijden.</p>
+  <div class="layer-list">
+    <label class="layer-row"><span class="layer-swatch verboden"></span><span class="layer-copy"><b>Verboden</b><small>Hier mag je niet komen</small></span><span class="switch"><input type="checkbox" data-layer="verboden" checked><i></i></span></label>
+    <label class="layer-row"><span class="layer-swatch rijbaan"></span><span class="layer-copy"><b>Naar de rijbaan</b><small>Helmplicht op dit weggedeelte</small></span><span class="switch"><input type="checkbox" data-layer="rijbaan" checked><i></i></span></label>
+    <label class="layer-row"><span class="layer-swatch fietspad"></span><span class="layer-copy"><b>Fietspad toegestaan</b><small>Gewoon doorrijden</small></span><span class="switch"><input type="checkbox" data-layer="fietspad" checked><i></i></span></label>
+    <label class="layer-row"><span class="layer-swatch venster"></span><span class="layer-copy"><b>Alleen binnen venstertijd</b><small>Wisselt per tijdstip</small></span><span class="switch"><input type="checkbox" data-layer="venstertijd" checked><i></i></span></label>
+  </div>
+  <div class="sheet-rows">
+    <button class="sheet-row" id="open-window"><b>Tijdvenster verkennen</b><span>›</span></button>
+    <button class="sheet-row" id="open-street"><b>Straat opzoeken</b><span>›</span></button>
+  </div>
+  <p class="hint">Helemaal inzoomen kan, maar dan zit je wel heeeeeeel erg op de details.</p>
+</section>
+
+<!-- Zone-detail (design 26) -->
+<section class="panel sheet hidden" id="panel-zone">
+  <div class="grab" aria-hidden="true"></div>
+  <span class="zone-badge" id="zd-badge">VERBODEN</span>
+  <h2 class="panel-title" id="zd-name">–</h2>
+  <p class="sheet-sub" id="zd-desc"></p>
+  <div class="zd-window hidden" id="zd-window">
+    <b id="zd-window-time">–</b>
+    <span id="zd-window-now">–</span>
+  </div>
+  <dl class="zd-facts">
+    <div><dt>Voertuig</dt><dd id="zd-vehicle">–</dd></div>
+    <div><dt>Geldig vanaf</dt><dd id="zd-since">–</dd></div>
+    <div><dt>Zekerheid</dt><dd id="zd-certainty">–</dd></div>
+    <div><dt>Bron</dt><dd id="zd-source">–</dd></div>
+  </dl>
+  <button class="zd-link" id="zd-decree">
+    <svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7Z"/><path d="M14 2v5h5"/></svg>
+    Lees het verkeersbesluit
+  </button>
+</section>
+
+<!-- Tijdvenster verkennen (design 28) -->
+<section class="panel sheet hidden" id="panel-window">
+  <div class="grab" aria-hidden="true"></div>
+  <h2 class="panel-title">Hoe ziet de kaart er straks uit?</h2>
+  <p class="sheet-sub">Sommige verboden gelden alleen binnen venstertijden. Schuif door de dag om te zien wat er verandert.</p>
+  <input class="window-slider" id="window-slider" type="range" min="6" max="23" step="0.25" value="14.33" aria-label="Tijdstip">
+  <div class="window-marks"><span>06:00</span><span>11:00</span><span id="window-now">14:20</span><span>18:00</span><span>23:00</span></div>
+  <div class="window-state" id="window-state">
+    <b>Nu gesloten: Steenweg en Lijnmarkt</b>
+    <span>Venstertijd ma-za 11:00 tot 18:00</span>
+  </div>
+</section>
+
+<!-- Straat opzoeken (design 29) -->
+<section class="panel sheet hidden" id="panel-street">
+  <div class="grab" aria-hidden="true"></div>
+  <h2 class="panel-title">Mag ik hier rijden?</h2>
+  <div class="search-field"><input id="street-input" type="text" value="Biltstraat" autocomplete="off"><svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" fill="none" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg></div>
+  <div class="street-cards">
+    <div class="street-card rijbaan"><b>Naar de rijbaan</b><span>Tussen Nachtegaalstraat en Waterlinieweg. Helmplicht.</span></div>
+    <div class="street-card fietspad"><b>Fietspad toegestaan</b><span>Ter hoogte van de kruising met de Oorsprongslaan.</span></div>
+    <div class="street-card wijziging"><b>Verandert per 1 december</b><span>Dan gaat het hele weggedeelte naar de rijbaan.</span></div>
+  </div>
+</section>
+
+<!-- Route berekenen (design 31) -->
+<section class="panel hidden" id="panel-calc">
+  <div class="grab" aria-hidden="true"></div>
+  <h2 class="panel-title">Route berekenen</h2>
+  <p class="sheet-sub">We zoeken de snelste weg die binnen de regels blijft.</p>
+  <ul class="calc-steps" id="calc-steps">
+    <li data-step="0"><span class="calc-ic"></span><span id="calc-step-0">Route zoeken</span></li>
+    <li data-step="1"><span class="calc-ic"></span><span>Verboden zones controleren</span></li>
+    <li data-step="2"><span class="calc-ic"></span><span id="calc-step-2">Venstertijden checken</span></li>
+  </ul>
+</section>
+
+<!-- Kleine toast -->
+<div class="app-toast hidden" id="app-toast"></div>
 
 <!-- ===== Bottom panels: exactly one is visible at any time ===== -->
 
 <!-- 1. Search -->
 <section class="panel" id="panel-search">
   <div class="grab" aria-hidden="true"></div>
-  <h1 class="panel-title">Waar wil je heen?</h1>
+  <h1 class="panel-title">Waar wil je heen? <svg width="22" height="22" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><circle cx="5.5" cy="17" r="3"/><circle cx="18.5" cy="17" r="3"/><path d="M8.5 17h7"/><path d="M18.5 17V9a2 2 0 0 0-2-2h-2"/><path d="M5.5 14l3.2-6.5h4.1"/><path d="M12.8 7.5 15 12"/></svg></h1>
   <div class="search-field">
     <input id="search-input" type="text" placeholder="Zoek op locatie…" autocomplete="off" enterkeyhint="search">
     <svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" fill="none" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>
@@ -145,7 +321,7 @@
   <div class="done-check" aria-hidden="true">
     <svg width="28" height="28" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m4.5 12.5 5 5 10-11"/></svg>
   </div>
-  <h2 class="panel-title small center">Je bent aangekomen</h2>
+  <h2 class="panel-title small center">Je bent gearriveerd!</h2>
   <p class="done-sub" id="done-destination">–</p>
   <div class="stats">
     <div class="stat"><span class="stat-value" id="done-distance">–</span><span class="stat-label">Afstand</span></div>

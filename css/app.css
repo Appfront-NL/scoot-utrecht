@@ -857,3 +857,358 @@ button {
   .brand-name{display:none}
   .vehicle-option{padding:8px 10px;font-size:12.5px}
 }
+
+/* ============================================================
+   v2 — components for the expanded design (37 screens)
+   ============================================================ */
+
+/* ---------- topbar v2: bell / city / avatar+info ---------- */
+.map-title{
+  font-size:15px;font-weight:600;letter-spacing:-.01em;
+  background:var(--paper);border-radius:99px;padding:10px 18px;
+  box-shadow:0 2px 12px rgba(15,23,42,.14);
+}
+.avatar-button{
+  width:42px;height:42px;border-radius:50%;border:0;cursor:pointer;
+  background:linear-gradient(150deg,var(--violet-500),var(--violet-700));
+  color:#fff;font-size:13px;font-weight:700;
+  box-shadow:0 2px 12px rgba(15,23,42,.14);
+}
+.info-button{position:relative}
+.notify-dot{
+  position:absolute;top:9px;right:9px;width:8px;height:8px;border-radius:50%;
+  background:var(--danger);border:1.5px solid #fff;
+}
+.notify-dot.hidden{display:none}
+
+/* ---------- floating map controls ---------- */
+.float-stack{
+  position:fixed;right:14px;z-index:19;
+  bottom:calc(200px + env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;gap:10px;
+}
+.float-stack .info-button.active{color:var(--violet-500)}
+
+/* ---------- nav banner: street line ---------- */
+.nav-banner-street{
+  display:block;font-size:14px;color:#94a3b8;line-height:1.3;margin-top:1px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+/* ---------- light warning card (design 08/12/13/14) ---------- */
+.zone-card{
+  position:fixed;z-index:21;left:14px;right:14px;
+  top:calc(64px + env(safe-area-inset-top));
+  background:#fdf4f4;
+  border:1px solid rgba(239,68,68,.25);
+  border-radius:18px;
+  padding:16px 16px 14px;
+  box-shadow:0 18px 44px -12px rgba(15,23,42,.28);
+  animation:zone-in .45s cubic-bezier(.34,1.35,.45,1);
+}
+@keyframes zone-in{from{transform:translateY(-16px) scale(.97);opacity:0}}
+.zone-card-head{display:flex;align-items:center;gap:10px}
+.zone-card-icon{color:#b91c1c;flex:none;display:grid;place-items:center}
+.zone-card-title{flex:1;font-size:16px;font-weight:700;color:#7f1d1d;letter-spacing:-.01em;line-height:1.3}
+.zone-card-close{border:0;background:none;color:#b45c5c;font-size:21px;line-height:1;padding:2px 4px;cursor:pointer}
+.zone-card-body{margin:8px 2px 13px;font-size:14.5px;line-height:1.5;color:#8c3a3a}
+.zone-card-cta{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;height:48px;border:0;border-radius:10px;cursor:pointer;
+  background:#b91c1c;color:#fff;font-size:15.5px;font-weight:600;
+  transition:background .15s,transform .12s;
+}
+.zone-card-cta:hover{background:#991b1b}
+.zone-card-cta:active{transform:translateY(1px)}
+/* amber variant: naar de rijbaan */
+.zone-card.rijbaan{background:#fdf8ec;border-color:rgba(245,158,11,.3)}
+.zone-card.rijbaan .zone-card-icon{color:#b45309}
+.zone-card.rijbaan .zone-card-title{color:#78350f}
+.zone-card.rijbaan .zone-card-body{color:#8a5a1d}
+.zone-card.rijbaan .zone-card-cta{background:#b45309}
+.zone-card.rijbaan .zone-card-cta:hover{background:#92400e}
+/* grey variant: geen route gevonden */
+.zone-card.noroute{background:#fafbfc;border-color:var(--line-2)}
+.zone-card.noroute .zone-card-icon{color:var(--ink-2)}
+.zone-card.noroute .zone-card-title{color:var(--ink)}
+.zone-card.noroute .zone-card-body{color:var(--ink-3)}
+.zone-card.noroute .zone-card-cta{background:#6b7480}
+.zone-card.noroute .zone-card-cta:hover{background:#565e68}
+
+/* ---------- zone pills + destination flag on the map ---------- */
+.zone-pill{
+  border:0;cursor:pointer;border-radius:6px;padding:4px 9px;
+  font-family:inherit;font-size:10px;font-weight:700;letter-spacing:.06em;
+  color:#fff;box-shadow:0 2px 8px rgba(15,23,42,.22);white-space:nowrap;
+}
+.zone-pill--verboden{background:var(--danger)}
+.zone-pill--rijbaan{background:var(--caution)}
+.zone-pill--fietspad{background:var(--ok)}
+.destination-flag{
+  display:flex;align-items:center;gap:5px;
+  background:var(--danger);color:#fff;border-radius:7px;
+  padding:5px 10px;font-size:12.5px;font-weight:600;
+  box-shadow:0 3px 10px rgba(15,23,42,.28);white-space:nowrap;
+}
+
+/* ---------- onboarding: auth ---------- */
+.auth-screen,.plate-screen{
+  position:fixed;inset:0;z-index:44;background:var(--violet-50);
+  overflow-y:auto;
+  padding:calc(30px + env(safe-area-inset-top)) 22px calc(28px + env(safe-area-inset-bottom));
+}
+.auth-inner,.plate-inner{max-width:480px;margin:0 auto;display:flex;flex-direction:column;min-height:100%}
+.auth-logo{
+  width:64px;height:64px;border-radius:18px;background:#fff;
+  border:1px solid var(--line-2);display:grid;place-items:center;
+  color:var(--ink);margin:10px 0 26px;
+}
+.auth-title{font-size:29px;font-weight:600;letter-spacing:-.022em;margin:0 0 8px}
+.auth-sub{font-size:15px;line-height:1.5;color:var(--ink-3);margin:0 0 22px}
+.auth-fields{display:flex;flex-direction:column;gap:12px}
+.auth-field{
+  height:52px;padding:0 15px;border:1px solid var(--line);border-radius:var(--radius);
+  font:inherit;font-size:16px;color:var(--ink);background:#fff;outline:0;
+  transition:border-color .15s,box-shadow .15s;
+}
+.auth-field:focus{border-color:var(--violet-500);box-shadow:0 0 0 3px rgba(139,92,246,.13)}
+.auth-link{
+  border:0;background:none;cursor:pointer;padding:0;
+  color:var(--violet-500);font:inherit;font-size:14.5px;font-weight:600;
+  align-self:flex-end;margin-top:12px;
+}
+.auth-link.inline{display:inline;margin:0}
+.auth-view{display:flex;flex-direction:column;flex:1}
+.auth-view .button{margin-top:auto}
+.auth-view .auth-link + .button{margin-top:26px}
+.auth-foot{font-size:14.5px;color:var(--ink-3);text-align:center;margin:14px 0 0}
+
+/* ---------- onboarding: kenteken (design 33) ---------- */
+.plate-title{font-size:29px;font-weight:600;letter-spacing:-.022em;line-height:1.15;margin:6px 0 8px}
+.plate-sub{font-size:15px;line-height:1.5;color:var(--ink-3);margin:0 0 22px}
+.plate-card{
+  display:flex;flex-direction:column;gap:12px;width:100%;text-align:left;
+  background:#fff;border:1.5px solid var(--line-2);border-radius:16px;
+  padding:16px;margin-bottom:12px;cursor:pointer;font-family:inherit;position:relative;
+  transition:border-color .15s,box-shadow .15s;
+}
+.plate-card.selected{border-color:var(--violet-500);box-shadow:0 0 0 3px rgba(139,92,246,.12)}
+.plate{
+  display:flex;align-items:stretch;height:64px;border-radius:8px;overflow:hidden;
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.14);
+}
+.plate i{
+  flex:none;width:34px;background:#003399;color:#fff;
+  display:grid;place-items:end center;padding-bottom:6px;
+  font-style:normal;font-size:10px;font-weight:700;
+}
+.plate b{
+  flex:1;display:grid;place-items:center;
+  font-size:30px;font-weight:700;letter-spacing:.06em;
+}
+.plate--blue b{background:#1d5fd6;color:#fff}
+.plate--yellow b{background:#f7c81e;color:#111}
+.plate-meta b{display:block;font-size:16px;font-weight:600}
+.plate-meta small{font-size:13.5px;color:var(--ink-3)}
+.plate-check{
+  position:absolute;right:16px;bottom:18px;width:26px;height:26px;border-radius:50%;
+  display:grid;place-items:center;color:#fff;background:var(--violet-500);
+  opacity:0;transform:scale(.6);transition:.18s;
+}
+.plate-card.selected .plate-check{opacity:1;transform:scale(1)}
+.plate-note{
+  display:flex;flex-direction:column;gap:2px;
+  background:#fdf8ec;border:1px solid rgba(245,158,11,.3);border-radius:12px;
+  padding:13px 15px;margin:8px 0 20px;
+}
+.plate-note b{font-size:14px;color:#b45309}
+.plate-note span{font-size:13.5px;color:#8a5a1d;line-height:1.45}
+.plate-inner .button{margin-top:auto}
+
+/* ---------- onboarding: regels ophalen (design 32) ---------- */
+.rules-loading{
+  position:fixed;inset:0;z-index:44;
+  background:linear-gradient(170deg,var(--violet-500) 0%,#5b21b6 60%,#2e1065 100%);
+  color:#fff;display:grid;place-items:center;text-align:center;
+  padding:32px 26px;
+}
+.rules-loading-inner{max-width:400px}
+.rules-loading-tiles{
+  display:grid;grid-template-columns:repeat(8,1fr);gap:6px;
+  width:min(260px,60vw);margin:0 auto 34px;
+}
+.rules-loading-tiles i{
+  aspect-ratio:1;border-radius:4px;background:rgba(255,255,255,.16);
+  opacity:0;animation:tile-in .5s ease forwards;
+}
+.rules-loading-tiles i.c1{background:rgba(239,68,68,.75)}
+.rules-loading-tiles i.c2{background:rgba(245,158,11,.75)}
+.rules-loading-tiles i.c3{background:rgba(16,185,129,.7)}
+@keyframes tile-in{to{opacity:1}}
+.rules-loading h2{font-size:25px;font-weight:600;letter-spacing:-.02em;margin:0 0 10px}
+.rules-loading p{font-size:15px;line-height:1.55;color:rgba(255,255,255,.82);margin:0 0 24px}
+.rules-loading-count{font-size:15px;color:rgba(255,255,255,.9)}
+.rules-loading-count b{font-variant-numeric:tabular-nums;font-size:17px}
+.rules-loading-once{
+  display:inline-block;margin-top:14px;padding:5px 13px;border-radius:99px;
+  border:1px solid rgba(255,255,255,.35);font-size:12px;font-weight:600;letter-spacing:.05em;
+  color:rgba(255,255,255,.85);
+}
+
+/* ---------- generic sheet bits ---------- */
+.sheet-sub{font-size:14px;line-height:1.5;color:var(--ink-3);margin:-6px 0 16px}
+.sheet-rows{margin-top:10px;border-top:1px solid var(--line-2)}
+.sheet-row{
+  display:flex;align-items:center;justify-content:space-between;width:100%;
+  padding:14px 2px;border:0;border-bottom:1px solid var(--line-2);
+  background:none;cursor:pointer;font-family:inherit;
+}
+.sheet-row b{font-size:15px;font-weight:500}
+.sheet-row span{color:var(--line);font-size:19px}
+
+/* switch (kaartlagen) */
+.switch{position:relative;flex:none;width:46px;height:28px}
+.switch input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.switch i{
+  position:absolute;inset:0;border-radius:99px;background:#d7dce3;transition:background .18s;
+  pointer-events:none;
+}
+.switch i::after{
+  content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 4px rgba(15,23,42,.25);transition:transform .18s;
+}
+.switch input:checked + i{background:var(--violet-500)}
+.switch input:checked + i::after{transform:translateX(18px)}
+.switch input:focus-visible + i{outline:2px solid var(--violet-500);outline-offset:2px}
+
+/* kaartlagen-rijen */
+.layer-list{display:flex;flex-direction:column;gap:10px}
+.layer-row{
+  display:flex;align-items:center;gap:13px;
+  background:#fff;border:1px solid var(--line-2);border-radius:13px;
+  padding:12px 14px;cursor:pointer;
+}
+.layer-swatch{
+  width:26px;height:26px;border-radius:8px;flex:none;border:1.5px dashed;
+}
+.layer-swatch.verboden{background:rgba(239,68,68,.15);border-color:var(--danger)}
+.layer-swatch.rijbaan{background:rgba(245,158,11,.15);border-color:var(--caution)}
+.layer-swatch.fietspad{background:rgba(16,185,129,.13);border-color:var(--ok)}
+.layer-swatch.venster{background:rgba(47,111,237,.12);border-color:var(--route)}
+.layer-copy{flex:1;min-width:0}
+.layer-copy b{display:block;font-size:15px;font-weight:600}
+.layer-copy small{font-size:13px;color:var(--ink-3)}
+
+/* ---------- zone-detail (design 26) ---------- */
+.zone-badge{
+  display:inline-flex;align-self:flex-start;align-items:center;gap:6px;
+  font-size:11.5px;font-weight:700;letter-spacing:.08em;
+  padding:5px 11px;border-radius:99px;margin-bottom:10px;
+  background:var(--danger-soft);color:#b91c1c;
+}
+.zone-badge.rijbaan{background:#fdf3dd;color:#b45309}
+.zone-badge.fietspad{background:#dcfaee;color:#047857}
+.zd-window{
+  display:flex;flex-direction:column;gap:3px;
+  background:#fdf8ec;border:1px solid rgba(245,158,11,.35);border-radius:12px;
+  padding:13px 15px;margin-bottom:14px;
+}
+.zd-window b{font-size:14.5px;color:#b45309}
+.zd-window span{font-size:13.5px;color:#8a5a1d;line-height:1.45}
+.zd-facts{
+  margin:0 0 14px;border:1px solid var(--line-2);border-radius:12px;
+  background:#fafbfc;padding:4px 16px;
+}
+.zd-facts > div{
+  display:flex;justify-content:space-between;gap:14px;
+  padding:11px 0;border-bottom:1px solid var(--line-2);
+}
+.zd-facts > div:last-child{border-bottom:0}
+.zd-facts dt{font-size:13.5px;color:var(--ink-3)}
+.zd-facts dd{margin:0;font-size:13.5px;font-weight:500;text-align:right}
+.zd-link{
+  display:flex;align-items:center;justify-content:center;gap:8px;width:100%;
+  height:48px;border:1px solid var(--line-2);border-radius:var(--radius);
+  background:#fff;color:var(--violet-500);font:inherit;font-size:15px;font-weight:600;cursor:pointer;
+}
+.zd-link:hover{background:var(--violet-50)}
+
+/* ---------- tijdvenster verkennen (design 28) ---------- */
+.window-slider{
+  width:100%;margin:6px 0 6px;accent-color:var(--violet-500);height:28px;
+}
+.window-marks{
+  display:flex;justify-content:space-between;
+  font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums;margin-bottom:16px;
+}
+.window-marks #window-now{color:var(--violet-500);font-weight:700}
+.window-state{
+  display:flex;flex-direction:column;gap:3px;
+  border-radius:12px;padding:13px 15px;
+  background:var(--danger-soft);border:1px solid rgba(239,68,68,.25);
+  transition:background .25s,border-color .25s;
+}
+.window-state.open{background:#dcfaee;border-color:rgba(16,185,129,.35)}
+.window-state b{font-size:14.5px}
+.window-state span{font-size:13.5px;color:var(--ink-3)}
+
+/* ---------- straat opzoeken (design 29) ---------- */
+.street-cards{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.street-card{
+  border-radius:12px;padding:13px 15px;border:1px solid;
+  display:flex;flex-direction:column;gap:3px;
+}
+.street-card b{font-size:14.5px}
+.street-card span{font-size:13.5px;line-height:1.45;color:var(--ink-3)}
+.street-card.rijbaan{background:#fdf8ec;border-color:rgba(245,158,11,.3)}
+.street-card.rijbaan b{color:#b45309}
+.street-card.fietspad{background:#f0fbf6;border-color:rgba(16,185,129,.3)}
+.street-card.fietspad b{color:#047857}
+.street-card.wijziging{background:#f2f6ff;border-color:rgba(47,111,237,.25)}
+.street-card.wijziging b{color:var(--route)}
+
+/* ---------- route berekenen (design 31) ---------- */
+.calc-steps{list-style:none;margin:2px 0 8px;padding:0;display:flex;flex-direction:column;gap:14px}
+.calc-steps li{display:flex;align-items:center;gap:12px;font-size:15px;color:var(--ink-3);transition:color .2s}
+.calc-ic{
+  width:26px;height:26px;border-radius:50%;flex:none;position:relative;
+  border:2px solid var(--line);transition:.2s;
+}
+.calc-steps li.active{color:var(--ink)}
+.calc-steps li.active .calc-ic{border-color:var(--violet-500)}
+.calc-steps li.active .calc-ic::after{
+  content:"";position:absolute;inset:2px;border-radius:50%;
+  border:2.5px solid var(--violet-300);border-top-color:var(--violet-700);
+  animation:calc-spin .7s linear infinite;
+}
+@keyframes calc-spin{to{transform:rotate(360deg)}}
+.calc-steps li.done{color:var(--ink)}
+.calc-steps li.done .calc-ic{background:var(--ok);border-color:var(--ok)}
+.calc-steps li.done .calc-ic::after{
+  content:"";position:absolute;left:7px;top:5.5px;width:6px;height:10px;
+  border:solid #fff;border-width:0 2.5px 2.5px 0;transform:rotate(42deg);
+  animation:none;
+}
+
+/* ---------- toast ---------- */
+.app-toast{
+  position:fixed;left:50%;transform:translateX(-50%);z-index:64;
+  bottom:calc(120px + env(safe-area-inset-bottom));
+  background:#111827;color:#fff;border-radius:99px;
+  padding:10px 20px;font-size:14px;font-weight:500;white-space:nowrap;
+  box-shadow:0 10px 30px rgba(15,23,42,.3);
+  animation:toast-in .3s cubic-bezier(.34,1.3,.5,1);
+}
+@keyframes toast-in{from{transform:translate(-50%,12px);opacity:0}}
+
+/* ---------- bijna aangekomen (design 09) ---------- */
+.panel.ride.almost #ride-time{color:var(--ok)}
+.panel.ride.almost .ride-stat:first-child .stat-label::after{content:""}
+
+/* micro-interactions */
+.button:active,.zd-link:active,.suggestion:active,.sheet-row:active{transform:translateY(1px)}
+@media (prefers-reduced-motion:reduce){
+  .zone-card,.app-toast{animation:none}
+  .calc-steps li.active .calc-ic::after{animation:none}
+  .rules-loading-tiles i{animation:none;opacity:1}
+}

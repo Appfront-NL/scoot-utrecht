@@ -22,30 +22,37 @@ export const CITIES = {
     // Within this radius of the center you count as "in this city".
     radiusKm: 10,
     rulesUrl: 'mock/regels-utrecht.geojson',
+    // street names the mock router uses for its legs (design shows
+    // named maneuvers; track B can ship real ones via `straten`)
+    streetNames: ['Oudegracht', 'Lange Nieuwstraat', 'Domstraat'],
 
-    /* Welcome-screen cards (the design's "Welkom in …" page). */
+    /* Welcome-screen cards — copy verbatim from the design (02/11). */
     rules: [
       { title: 'Rijd op de rijbaan',
-        text: 'Op wegen waar je maximaal 50 km/u mag rijden, hoor je met een bromscooter op de rijbaan. Volg altijd de verkeersborden bij uitzonderingen.' },
+        text: 'Op wegen waar je maximaal 50 km/u mag rijden, gebruik je met een bromscooter meestal de rijbaan. Volg altijd de verkeersborden bij uitzonderingen.' },
       { title: 'Let op wisselende rijzones',
-        text: 'Op sommige plekken gaat de route over in een verplicht fiets- of bromfietspad. De app waarschuwt je voordat de rijzone verandert.' },
+        text: 'Op sommige locaties gaat de scooterroute over in een verplicht fiets-/bromfietspad. De app waarschuwt je voordat de rijzone verandert.' },
       { title: 'Snorscooters soms ook op de rijbaan',
-        text: 'Rijd je met een blauw kenteken? In grote delen van Utrecht moet je dan toch op de rijbaan rijden. Volg de blauwe routeborden langs de weg.' },
+        text: 'Rijd je met een blauw kenteken? In grote delen van Utrecht moet je op de rijbaan rijden. Volg de blauwe routeborden en pijlen langs de weg.' },
       { title: 'Parkeren rond Utrecht Centraal',
-        text: 'Rond het stationsgebied mag je alleen parkeren in een aangewezen vak, rek of scooterstalling. Daarbuiten kan je scooter worden verwijderd.' },
+        text: 'Rond het stationsgebied mag je alleen parkeren in een aangewezen vak, rek of scooterstalling. Buiten deze plekken kan je scooter worden verwijderd.' },
     ],
 
     /* Demo destinations = the search index until track B ships
        geocoding. Per city, so search always stays local. */
     destinations: [
-      { name: 'Domplein',         area: 'Binnenstad',     point: [5.12222, 52.09062] },
+      // "Fontijnboot · Opgeslagen · Westerdok" komt uit het design —
+      // het Westerdok is het thuisfront, wie het weet, weet het.
+      { name: 'Fontijnboot',      area: 'Opgeslagen · Westerdok', point: [5.11780, 52.09900], saved: true },
       { name: 'Utrecht Centraal', area: 'Stationsgebied', point: [5.10999, 52.08949] },
+      { name: 'Domplein',         area: 'Binnenstad',     point: [5.12222, 52.09062] },
       { name: 'Neude',            area: 'Binnenstad',     point: [5.11862, 52.09329] },
-      { name: 'TivoliVredenburg', area: 'Vredenburgkade', point: [5.11282, 52.09230] },
       { name: 'Jaarbeurs',        area: 'Croeselaan',     point: [5.10530, 52.08560] },
-      { name: 'Ledig Erf',        area: 'Zuid',           point: [5.12310, 52.07940] },
-      { name: 'Griftpark',        area: 'Noordoost',      point: [5.12660, 52.10050] },
+      { name: 'Rijnsweerd',       area: 'Oost',           point: [5.15680, 52.08650] },
+      { name: 'TivoliVredenburg', area: 'Vredenburgkade', point: [5.11282, 52.09230] },
       { name: 'Wilhelminapark',   area: 'Oost',           point: [5.13450, 52.08370] },
+      { name: 'Griftpark',        area: 'Noordoost',      point: [5.12660, 52.10050] },
+      { name: 'Kinderboerderij',  area: 'Mini-geitjes',   point: [5.13060, 52.09850] },
     ],
   },
 

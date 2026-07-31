@@ -14,8 +14,13 @@
 import { CONFIG } from './config.js';
 import { makeRuler, pointAlong, bearingDeg, distanceM } from './geo.js';
 
-/** Derives turns from the route line. Labels are UI copy (Dutch). */
-export function buildManeuvers(coords) {
+/**
+ * Derives turns from the route line. Labels are UI copy (Dutch).
+ * `streets` (optional, from the API's `straten` field) names the
+ * street you turn ONTO at each maneuver; without it the banner
+ * simply shows direction-only instructions.
+ */
+export function buildManeuvers(coords, streets) {
   const ruler = makeRuler(coords);
   const maneuvers = [];
 
@@ -29,10 +34,11 @@ export function buildManeuvers(coords) {
         atMeter: ruler.cum[i],
         label: turn > 0 ? 'Rechtsaf' : 'Linksaf',
         direction: turn > 0 ? 'right' : 'left',
+        street: streets?.[Math.min(maneuvers.length + 1, (streets?.length ?? 1) - 1)] ?? null,
       });
     }
   }
-  maneuvers.push({ atMeter: ruler.total, label: 'Bestemming', direction: 'arrival' });
+  maneuvers.push({ atMeter: ruler.total, label: 'Bestemming', direction: 'arrival', street: null });
   return { ruler, maneuvers };
 }
 

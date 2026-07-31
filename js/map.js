@@ -20,8 +20,14 @@ const REGIME_COLOR = {
 let map;               // the MapLibre instance
 let riderMarker;       // custom DOM marker for the rider
 let destinationMarker;
+let destinationFlag;
 let arrivalBadge;
 let warningMarkers = [];
+let zonePills = [];
+let zoneClickHandler = null;
+let zonesData = null;
+const visibleRegimes = { verboden: true, rijbaan: true, fietspad: true };
+let windowZonesVisible = true;
 
 /** Mounts the map on the given center, resolves once loaded. */
 export function initMap(center) {
@@ -37,9 +43,10 @@ export function initMap(center) {
   });
 }
 
-/** Lets the app react to a tap on the map (pick a destination). */
+/** Lets the app react to a tap on the map. Handler receives the
+    lngLat AND the screen point (for zone hit-testing via zoneAt). */
 export function onMapClick(handler) {
-  map.on('click', (e) => handler([e.lngLat.lng, e.lngLat.lat]));
+  map.on('click', (e) => handler([e.lngLat.lng, e.lngLat.lat], e.point));
 }
 
 /* ---------- zones (track C's rule data) ---------- */
@@ -103,22 +110,82 @@ export function drawZones(geojson) {
     layout: { 'line-cap': 'round', 'line-join': 'round' },
   });
 
-  // Zone name alongside, small and quiet.
-  map.addLayer({
-    id: 'zones-label',
-    type: 'symbol',
-    source: 'zones',
-    layout: {
-      'text-field': ['get', 'naam'],
-      'text-size': 10.5,
-      'text-font': ['Noto Sans Regular'],
-    },
-    paint: {
-      'text-color': '#64748b',
-      'text-halo-color': 'rgba(255,255,255,.9)',
-      'text-halo-width': 1.4,
-    },
-  });
+  buildZonePills(geojson);
+  applyZoneVisibility();
+}
+
+/* Colored pill labels on each zone (the design's TOEGESTAAN /
+   VERBODEN ZONE chips). DOM markers because MapLibre symbols
+   can't draw a padded colored background. Clicking a pill opens
+   the zone detail, same as clicking the zone itself. */
+const REGIME_PILL = { verboden: 'VERBODEN', rijbaan: 'RIJBAAN', fietspad: 'TOEGESTAAN' };
+function buildZonePills(geojson) {
+  zonePills.forEach(p => p.marker.remove());
+  zonePills = [];
+  for (const f of geojson.features) {
+    const regime = f.properties.regime;
+    if (!REGIME_PILL[regime]) continue;
+    const at = zoneAnchor(f.geometry);
+    const el = document.createElement('button');
+    el.className = 'zone-pill zone-pill--' + regime;
+    el.type = 'button';
+    el.textContent = REGIME_PILL[regime] + (f.properties.tijdvenster ? ' · VENSTER' : '');
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      zoneClickHandler?.(f.properties);
+    });
+    const marker = new maplibregl.Marker({ element: el }).setLngLat(at).addTo(map);
+    zonePills.push({ marker, regime, hasWindow: !!f.properties.tijdvenster });
+  }
+}
+function zoneAnchor(geometry) {
+  const coords = geometry.type === 'Polygon' ? geometry.coordinates[0] : geometry.coordinates;
+  let x = 0, y = 0;
+  for (const c of coords) { x += c[0]; y += c[1]; }
+  return [x / coords.length, y / coords.length];
+}
+
+/** App registers what happens when a zone PILL is tapped. Clicks
+    on the zone shapes themselves route through onMapClick + zoneAt,
+    so there is exactly one code path deciding what a tap means. */
+export function onZoneClick(handler) {
+  zoneClickHandler = handler;
+}
+
+/** Returns whether a map click at this point hits a zone. */
+export function zoneAt(screenPoint) {
+  const hits = map.queryRenderedFeatures(screenPoint, { layers: ['zones-fill', 'zones-segment'] });
+  return hits.length ? hits[0].properties : null;
+}
+
+/* ---------- layer visibility (kaartlagen sheet) ---------- */
+
+export function setRegimeVisible(regime, visible) {
+  visibleRegimes[regime] = visible;
+  applyZoneVisibility();
+}
+export function setWindowZonesVisible(visible) {
+  windowZonesVisible = visible;
+  applyZoneVisibility();
+}
+export function getLayerState() {
+  return { ...visibleRegimes, venstertijd: windowZonesVisible };
+}
+function applyZoneVisibility() {
+  const shown = Object.keys(visibleRegimes).filter(r => visibleRegimes[r]);
+  // base filter per layer-geometry + regime whitelist + venstertijd rule
+  const regimeFilter = ['in', ['get', 'regime'], ['literal', shown]];
+  const windowFilter = windowZonesVisible
+    ? true
+    : ['!', ['to-boolean', ['get', 'tijdvenster']]];
+  for (const [id, geom] of [['zones-fill', 'Polygon'], ['zones-outline', 'Polygon'], ['zones-segment', 'LineString']]) {
+    if (!map.getLayer(id)) continue;
+    map.setFilter(id, ['all', ['==', ['geometry-type'], geom], regimeFilter, windowFilter]);
+  }
+  for (const p of zonePills) {
+    const visible = visibleRegimes[p.regime] && (windowZonesVisible || !p.hasWindow);
+    p.marker.getElement().style.display = visible ? '' : 'none';
+  }
 }
 
 /* ---------- route ---------- */
@@ -179,12 +246,20 @@ export function setRider(point, headingDeg = 0) {
   riderMarker.setLngLat(point).setRotation(headingDeg);
 }
 
-export function setDestination(point) {
+export function setDestination(point, name) {
   if (destinationMarker) { destinationMarker.remove(); destinationMarker = null; }
+  if (destinationFlag) { destinationFlag.remove(); destinationFlag = null; }
   if (!point) return;
   const el = document.createElement('div');
   el.className = 'destination-marker';
   destinationMarker = new maplibregl.Marker({ element: el }).setLngLat(point).addTo(map);
+  if (name) {
+    const flag = document.createElement('div');
+    flag.className = 'destination-flag';
+    flag.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4M5 5h11l-2 3.5 2 3.5H5"/></svg>' + name;
+    destinationFlag = new maplibregl.Marker({ element: flag, offset: [0, -26] })
+      .setLngLat(point).addTo(map);
+  }
 }
 
 /** One marker per warning from the API response, with a popup. */
