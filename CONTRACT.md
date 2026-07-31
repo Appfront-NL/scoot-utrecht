@@ -12,7 +12,7 @@ GET /route
 |---|---|---|---|
 | `start` | `lon,lat` | `5.1189,52.0855` | ja |
 | `eind` | `lon,lat` | `5.1214,52.0907` | ja |
-| `voertuig` | string | `bromscooter` \| `snorscooter` | ja |
+| `voertuig` | string | `snorfiets` \| `bromfiets` | ja |
 
 Coördinaten zijn WGS84 en staan in de volgorde **lon, lat** (zoals GeoJSON, niet zoals Google Maps).
 

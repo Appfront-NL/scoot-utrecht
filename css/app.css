@@ -1,0 +1,269 @@
+/* ============================================================
+   SCOOT — app-styling
+   Tokens komen 1-op-1 uit het Figma-designdagbestand.
+   Mobiel-first: dit wordt buiten met een helm op gebruikt,
+   dus grote knoppen en veel contrast (zie hackathon-briefing).
+   ============================================================ */
+
+:root{
+  /* merk */
+  --violet-700:#6d3ae6;
+  --violet-500:#8b5cf6;   /* primaire actie */
+  --violet-300:#c4b5fd;
+  --violet-50:#f5f3ff;
+
+  /* route & status */
+  --route:#2f6fed;
+  --ok:#10b981;
+  --waarschuwing:#f59e0b;
+  --verboden:#ef4444;
+  --verboden-zacht:#fdeaea;
+
+  /* tekst & vlakken */
+  --inkt:#0f172a;
+  --inkt-2:#334155;
+  --inkt-3:#64748b;
+  --lijn:#cbd5e1;
+  --lijn-2:#e8ecf2;
+  --papier:#ffffff;
+
+  --schaduw:0 -6px 30px rgba(15,23,42,.14);
+  --radius-paneel:24px;   /* rounded-3xl uit het design */
+  --radius:8px;           /* radius-l uit het design */
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  font-family:'DM Sans',system-ui,-apple-system,sans-serif;
+  color:var(--inkt);
+  overflow:hidden;                 /* de kaart scrolt, de pagina niet */
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--violet-500);outline-offset:2px;border-radius:6px}
+.verborgen{display:none !important}
+
+/* ---------- kaart ---------- */
+#kaart{position:fixed;inset:0}
+/* het MapLibre-logo mag blijven; de attributie iets subtieler */
+.maplibregl-ctrl-attrib{font-size:10px;opacity:.75}
+
+/* ---------- topbar ---------- */
+.topbar{
+  position:fixed;top:0;left:0;right:0;z-index:20;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:calc(10px + env(safe-area-inset-top)) 14px 10px;
+  pointer-events:none;             /* alleen de elementen zelf klikbaar */
+}
+.topbar>*{pointer-events:auto}
+.brand{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--papier);border-radius:99px;padding:8px 14px 8px 8px;
+  box-shadow:0 2px 12px rgba(15,23,42,.14);
+}
+.brand-mark{
+  width:28px;height:28px;border-radius:9px;display:grid;place-items:center;
+  background:linear-gradient(150deg,var(--violet-500),var(--violet-700));color:#fff;
+}
+.brand-name{font-size:14px;font-weight:700;letter-spacing:.08em}
+.voertuig{
+  display:inline-flex;gap:2px;background:var(--papier);border-radius:99px;padding:3px;
+  box-shadow:0 2px 12px rgba(15,23,42,.14);
+}
+.voertuig-optie{
+  border:0;background:none;border-radius:99px;padding:8px 13px;
+  font-size:13px;font-weight:600;color:var(--inkt-3);
+}
+.voertuig-optie.aan{background:var(--inkt);color:#fff}
+
+/* ---------- navigatiebanner ---------- */
+.navbanner{
+  position:fixed;z-index:20;left:14px;right:14px;
+  top:calc(64px + env(safe-area-inset-top));
+  background:#111827;color:#fff;border-radius:18px;
+  box-shadow:0 12px 34px rgba(15,23,42,.35);
+  padding:16px 20px;
+}
+.navbanner-hoofd{display:flex;align-items:center;gap:16px}
+.navbanner-pijl{
+  width:46px;height:46px;border-radius:14px;flex:none;display:grid;place-items:center;
+  background:rgba(255,255,255,.12);
+}
+.navbanner-afstand{
+  display:block;font-size:13.5px;font-weight:700;letter-spacing:.08em;
+  color:var(--violet-300);font-variant-numeric:tabular-nums;
+}
+.navbanner-actie{display:block;font-size:24px;font-weight:600;letter-spacing:-.02em;line-height:1.2}
+
+/* ---------- zone-waarschuwing ---------- */
+.zonekaart{
+  position:fixed;z-index:21;left:14px;right:14px;
+  top:calc(154px + env(safe-area-inset-top));
+  display:flex;align-items:center;gap:12px;
+  background:var(--papier);border:1.5px solid var(--verboden);border-radius:14px;
+  padding:13px 14px;box-shadow:0 14px 38px rgba(239,68,68,.25);
+}
+.zonekaart.rijbaan{border-color:var(--waarschuwing);box-shadow:0 14px 38px rgba(245,158,11,.25)}
+.zonekaart-icoon{
+  width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;
+  background:var(--verboden-zacht);color:var(--verboden);font-weight:700;font-size:18px;
+}
+.zonekaart.rijbaan .zonekaart-icoon{background:#fef3d9;color:var(--waarschuwing)}
+.zonekaart-tekst{flex:1;font-size:14.5px;line-height:1.4;color:var(--inkt-2)}
+.zonekaart-tekst b{color:var(--inkt)}
+.zonekaart-sluit{border:0;background:none;color:var(--inkt-3);font-size:22px;line-height:1;padding:4px}
+
+/* ---------- panelen ---------- */
+.paneel{
+  position:fixed;z-index:22;left:0;right:0;bottom:0;
+  margin:0 auto;max-width:480px;
+  background:var(--papier);border-radius:var(--radius-paneel) var(--radius-paneel) 0 0;
+  box-shadow:var(--schaduw);
+  padding:10px 22px calc(22px + env(safe-area-inset-bottom));
+  animation:paneel-in .32s cubic-bezier(.32,.72,0,1);
+}
+@keyframes paneel-in{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.paneel{animation:none}}
+.grab{width:48px;height:5px;border-radius:99px;background:#dfe4ea;margin:4px auto 14px}
+.paneel-titel{font-size:22px;font-weight:600;letter-spacing:-.02em;margin:0 0 14px}
+.paneel-titel.klein{font-size:19px;text-align:center;margin-top:-30px}
+.paneel-titel.midden{text-align:center;margin:0 0 4px}
+.terug{
+  position:relative;top:2px;border:0;background:none;color:var(--inkt);
+  width:34px;height:34px;display:grid;place-items:center;
+}
+.hint{font-size:13px;color:var(--inkt-3);margin:12px 0 0;text-align:center}
+
+/* zoekveld + suggesties */
+.zoekveld{
+  display:flex;align-items:center;gap:10px;
+  border:1px solid var(--lijn);border-radius:var(--radius);
+  padding:0 14px;height:52px;color:var(--inkt-3);
+  transition:border-color .15s, box-shadow .15s;
+}
+.zoekveld:focus-within{border-color:var(--violet-500);box-shadow:0 0 0 3px rgba(139,92,246,.13)}
+.zoekveld input{
+  flex:1;border:0;outline:0;font:inherit;font-size:16px;color:var(--inkt);
+  background:none;min-width:0;
+}
+.suggesties{max-height:236px;overflow-y:auto;margin-top:4px}
+.suggestie{
+  display:flex;align-items:center;gap:13px;width:100%;text-align:left;
+  border:0;background:none;padding:12px 2px;
+  border-bottom:1px solid var(--lijn-2);font:inherit;
+}
+.suggestie:last-child{border-bottom:0}
+.suggestie:hover{background:#f8fafc}
+.suggestie .pin{
+  width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;
+  background:#e3edff;color:var(--route);
+}
+.suggestie b{display:block;font-size:15.5px;font-weight:500}
+.suggestie small{font-size:13px;color:var(--inkt-3)}
+
+/* van/naar-blok */
+.fromto{border:1px solid var(--lijn-2);border-radius:12px;padding:14px 16px;margin-bottom:16px}
+.fromto-rij{display:flex;align-items:center;gap:13px}
+.fromto-rij b{display:block;font-size:15.5px;font-weight:500}
+.fromto-rij small{font-size:13px;color:var(--inkt-3)}
+.stip{width:11px;height:11px;border-radius:50%;flex:none;margin:0 3px}
+.stip.start{background:var(--route)}
+.stip.eind{background:var(--verboden)}
+.fromto-lijn{height:18px;border-left:2px dotted var(--lijn);margin:3px 0 3px 7px}
+
+/* statistieken */
+.statistieken{display:flex;gap:28px;margin-bottom:18px}
+.stat-w{
+  display:block;font-size:24px;font-weight:600;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums;
+}
+.stat-w.accent{color:var(--route)}
+.stat-l{font-size:13px;color:var(--inkt-3)}
+
+/* primaire knop — bewust groot: helm op, handschoenen aan */
+.knop{
+  display:flex;align-items:center;justify-content:center;gap:9px;
+  width:100%;height:54px;border:0;border-radius:var(--radius);
+  background:var(--violet-500);color:#fff;
+  font-size:16px;font-weight:600;
+  transition:background .15s;
+}
+.knop:hover{background:var(--violet-700)}
+
+/* rijweergave-balk */
+.paneel.rijden{
+  display:flex;align-items:center;gap:16px;
+  padding-top:18px;
+}
+.rij-stat{flex:1;min-width:0}
+.rij-stat .stat-w{font-size:20px}
+.rij-stat .stat-l{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.rij-scheiding{width:1px;height:32px;background:var(--lijn-2);flex:none}
+.stop{
+  width:46px;height:46px;border-radius:50%;flex:none;border:0;
+  background:var(--verboden-zacht);color:var(--verboden);
+  display:grid;place-items:center;
+}
+.stop:hover{background:#fbd5d5}
+
+/* aangekomen */
+.klaar-vink{
+  width:56px;height:56px;border-radius:50%;margin:2px auto 12px;
+  background:#dcfaee;color:var(--ok);display:grid;place-items:center;
+}
+.klaar-sub{font-size:14.5px;color:var(--inkt-3);text-align:center;margin:0 0 18px}
+
+/* demo-snelheid */
+.demo-snelheid{
+  position:fixed;z-index:22;right:14px;bottom:calc(118px + env(safe-area-inset-bottom));
+  display:flex;flex-direction:column;gap:4px;
+  background:var(--papier);border-radius:12px;padding:4px;
+  box-shadow:0 2px 12px rgba(15,23,42,.16);
+}
+.demo-snelheid button{
+  border:0;background:none;border-radius:8px;padding:7px 10px;
+  font-size:12px;font-weight:600;color:var(--inkt-3);
+  font-variant-numeric:tabular-nums;
+}
+.demo-snelheid button.aan{background:var(--violet-500);color:#fff}
+
+/* rijder-marker op de kaart */
+.rijder{
+  width:38px;height:38px;position:relative;
+}
+.rijder::before{                      /* zachte halo */
+  content:"";position:absolute;inset:0;border-radius:50%;
+  background:rgba(47,111,237,.18);
+}
+.rijder::after{                       /* pijlpunt in rijrichting */
+  content:"";position:absolute;left:50%;top:-7px;transform:translateX(-50%);
+  border:7px solid transparent;border-bottom:10px solid var(--route);
+}
+.rijder-kern{
+  position:absolute;inset:8px;border-radius:50%;
+  background:var(--route);border:3.5px solid #fff;
+  box-shadow:0 1px 6px rgba(15,23,42,.3);
+}
+
+/* waarschuwing-marker op de kaart */
+.waarschuwing-marker{
+  width:26px;height:26px;border-radius:50%;
+  background:var(--verboden);color:#fff;border:2.5px solid #fff;
+  display:grid;place-items:center;font-weight:700;font-size:14px;
+  box-shadow:0 2px 8px rgba(15,23,42,.3);
+}
+.waarschuwing-marker.rijbaan{background:var(--waarschuwing)}
+
+/* bestemming-marker */
+.bestemming-marker{
+  width:20px;height:20px;border-radius:50%;
+  background:var(--verboden);border:3px solid #fff;
+  box-shadow:0 2px 8px rgba(15,23,42,.3);
+}
+
+/* iets bredere schermen: panelen niet tegen de rand */
+@media (min-width:520px){
+  .paneel{left:16px;right:16px;bottom:16px;border-radius:var(--radius-paneel)}
+  .navbanner,.zonekaart{max-width:452px;margin:0 auto}
+}

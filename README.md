@@ -18,7 +18,7 @@ Dit is het enige wat beide sporen van elkaar hoeven te weten. Zie [`CONTRACT.md`
 **Verzoek**
 
 ```
-GET /route?start=<lon>,<lat>&eind=<lon>,<lat>&voertuig=bromscooter
+GET /route?start=<lon>,<lat>&eind=<lon>,<lat>&voertuig=snorfiets
 ```
 
 **Antwoord** — zie `mock/route.json` voor een geldig voorbeeld.
