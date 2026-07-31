@@ -48,14 +48,21 @@ export function startSimulatie({ liniaal, manoeuvres, waarschuwingen, bijStap, b
   let actief = true;
   const gemeld = new Set();   // elke waarschuwing maar één keer tonen
 
-  function tick(nu) {
+  // Bewust setInterval en geen requestAnimationFrame: rAF valt
+  // volledig stil zodra het venster bedekt is, en dan zou de rit
+  // bevriezen. Een interval blijft (vertraagd) doortikken; de
+  // vloeiendheid op het scherm komt van de camera-easing in
+  // kaart.js, niet van de tick-frequentie.
+  function tick() {
     if (!actief) return;
-    const dt = Math.min(0.1, (nu - vorigeTijd) / 1000);
+    const nu = performance.now();
+    const dt = Math.min(1, (nu - vorigeTijd) / 1000);
     vorigeTijd = nu;
     afgelegd += CONFIG.gemiddeldeSnelheidMs * factor * dt;
 
     if (afgelegd >= liniaal.totaal) {
       actief = false;
+      clearInterval(interval);
       bijKlaar();
       return;
     }
@@ -84,13 +91,12 @@ export function startSimulatie({ liniaal, manoeuvres, waarschuwingen, bijStap, b
       manoeuvre: volgende,
     });
 
-    requestAnimationFrame(tick);
   }
-  requestAnimationFrame(tick);
+  const interval = setInterval(tick, 50);   // 20 Hz is ruim genoeg
 
   return {
     zetFactor: (x) => { factor = x; },
-    stop: () => { actief = false; },
+    stop: () => { actief = false; clearInterval(interval); },
     afgelegd: () => afgelegd,
   };
 }

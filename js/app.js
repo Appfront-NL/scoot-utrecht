@@ -175,7 +175,12 @@ function toonZonekaart(w) {
   el.classList.remove('verborgen');
   el.classList.toggle('rijbaan', w.type === 'rijbaan');
   $('#zone-icoon').textContent = '!';
-  $('#zone-tekst').innerHTML = `<b>${w.type === 'rijbaan' ? 'Let op' : 'Verboden zone'}</b> · ${w.tekst}`;
+  // Contract-teksten hebben vaak al de vorm "Kop: detail" — dan
+  // maken we de kop vet in plaats van er zelf één voor te plakken.
+  const [kop, ...rest] = w.tekst.split(':');
+  $('#zone-tekst').innerHTML = rest.length
+    ? `<b>${kop.trim()}</b> · ${rest.join(':').trim()}`
+    : `<b>${w.type === 'rijbaan' ? 'Let op' : 'Verboden zone'}</b> · ${w.tekst}`;
   clearTimeout(zonekaartTimer);
   zonekaartTimer = setTimeout(verbergZonekaart, 6000);
 }
