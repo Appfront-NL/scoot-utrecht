@@ -15,7 +15,7 @@ import { CONFIG } from "~/lib/config.js";
 import { CITIES, cityFor } from "~/lib/cities.js";
 // Live routing from track B (TomTom + her zone data), in the
 // same contract shape the mock api used — see lib/route-engine.ts.
-import { getRoute, zonesAsGeoJSON, resolveLocation, searchSuggestions, tomtomRasterStyle } from "~/lib/route-engine";
+import { getRoute, zonesAsGeoJSON, resolveLocation, searchSuggestions } from "~/lib/route-engine";
 const fetchRoute = (
   start: [number, number], eind: [number, number], voertuig: string, _city?: unknown,
 ) => getRoute(start, eind, voertuig);
@@ -119,7 +119,7 @@ export default function Scoot() {
 
       wrapped.initWrapped();
 
-      await map.initMap(city.center, tomtomRasterStyle());
+      await map.initMap(city.center);
       if (cancelled) return;
       map.setRider(startRef.current, 0);
       try {
