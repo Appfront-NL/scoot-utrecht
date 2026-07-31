@@ -12,7 +12,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 // pure modules: safe on the server
 import { CONFIG } from "~/lib/config.js";
-import { CITIES } from "~/lib/cities.js";
+import { CITIES, cityFor } from "~/lib/cities.js";
 import { fetchRoute } from "~/lib/api.js";
 import { buildManeuvers, startSimulation, fmtDistance, fmtDuration, fmtArrival } from "~/lib/navigation.js";
 
@@ -118,6 +118,23 @@ export default function Home() {
       const eind = p.get("eind")?.split(",").map(Number);
       if (eind && eind.length === 2 && !eind.some(isNaN)) {
         plan({ name: p.get("naam") || "Gedeelde bestemming", area: "Via link", point: eind as [number, number] });
+      }
+
+      // Geolocation start point, but only inside a known city
+      // (cities.js): outside the dataset the demo start stays.
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            if (cancelled) return;
+            const here: [number, number] = [pos.coords.longitude, pos.coords.latitude];
+            if (!cityFor(here)) return;
+            startRef.current = here;
+            map.setRider(here, 0);
+            if (panelRef.current === "search") map.overviewCamera(here);
+          },
+          () => { /* denied or unavailable: fallback stays */ },
+          { timeout: 5000, maximumAge: 60000 },
+        );
       }
     })();
     return () => { cancelled = true; };
