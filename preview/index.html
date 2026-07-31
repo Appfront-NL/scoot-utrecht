@@ -1815,7 +1815,8 @@ function show(id, opts){
       $('#mapctl').style.bottom='390px';
       showRoute=true; showZones=true;
       riderPos={x:ROUTE[0].x,y:ROUTE[0].y}; riderHead=-Math.PI/2;
-      setCam({x:-480,y:720,zoom:.30,rot:0,oy:-130});
+      // hele route netjes in het zichtbare deel boven het paneel
+      setCam({x:-487,y:725,zoom:.285,rot:0,oy:-168});
       break;
     case 'nav':
       $('#navcard').classList.remove('hide');
