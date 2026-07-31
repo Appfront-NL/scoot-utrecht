@@ -5,9 +5,8 @@
 // the profile.css slide transitions play; later pushes get a
 // higher z-index so they paint on top. Back button or Escape
 // pops one screen at a time; popping the last screen calls
-// onClose. Includes the demo toast for the payment and decree
-// jokes ("Geld is maar een sociaal construct." / "Opent het
-// Gemeenteblad").
+// onClose. Includes a small toast for rows without a real flow
+// (payment, decree links).
 // ============================================================
 
 /**
@@ -65,7 +64,7 @@ export function ProfileStack({ open, initial = "account", onClose, onWrapped, on
   // screen stays on top of the screen below while it slides out.
   const [zMap, setZMap] = useState<Partial<Record<ScreenName, number>>>({});
 
-  // Toast for the demo jokes (payment row, decree links).
+  // Toast for rows without a real flow (payment, decree links).
   const [toast, setToast] = useState("");
   const [toastVisible, setToastVisible] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);

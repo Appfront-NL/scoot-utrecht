@@ -1,12 +1,12 @@
 // ============================================================
-// Achievements screen: earned badges, quests with progress bars
-// and the Mickront mystery quest. Ported from app/lib/profile.js;
-// presentational, styling in profile.css.
+// Achievements screen: earned badges and quests with progress
+// bars. Ported from app/lib/profile.js; presentational, styling
+// in profile.css.
 // ============================================================
 
 /**
  * Fullscreen achievements overview with the demo badges and quests
- * baked in (including the Mickront easter egg at 0/1).
+ * baked in.
  *
  * @example
  * <AchievementsScreen onBack={() => pop()} />

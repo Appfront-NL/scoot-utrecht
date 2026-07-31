@@ -6,7 +6,7 @@
 
 /**
  * Fullscreen notification list. Renders the demo notifications
- * (including all inside jokes) by default.
+ * by default; pass `notifications` for your own list.
  *
  * @example
  * <NotificationsScreen

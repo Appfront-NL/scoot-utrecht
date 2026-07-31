@@ -7,16 +7,14 @@
 /**
  * Fullscreen account overview with demo data baked in as defaults.
  *
- * The payment row intentionally has no real flow: the original demo
- * shows the toast "Geld is maar een sociaal construct." — provide
- * that joke yourself via `onPayment` (this component ships no toast
- * system of its own).
+ * The payment row has no built-in flow: wire it up via `onPayment`
+ * (this component ships no toast system of its own).
  *
  * @example
  * <AccountScreen
  *   onBack={() => setOpen(false)}
  *   onRideHistory={() => push("rides")}
- *   onPayment={() => toast("Geld is maar een sociaal construct.")}
+ *   onPayment={() => openPaymentSheet()}
  *   onWrapped={() => startWrapped()}
  * />
  */
