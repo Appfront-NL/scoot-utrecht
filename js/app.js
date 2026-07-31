@@ -9,6 +9,7 @@
 // ============================================================
 
 import { CONFIG } from './config.js';
+import { CITIES, cityFor } from './cities.js';
 import { fetchRoute, loadRules } from './api.js';
 import * as map from './map.js';
 import { buildManeuvers, startSimulation, fmtDistance, fmtDuration, fmtArrival } from './navigation.js';
@@ -16,35 +17,11 @@ import { buildManeuvers, startSimulation, fmtDistance, fmtDuration, fmtArrival }
 const $ = (s) => document.querySelector(s);
 const RULES_SEEN_KEY = 'scoot.rulesSeen';
 
-/* Fixed demo destinations. Once track B ships geocoding this list
-   can go; until then it is the search index. */
-const DESTINATIONS = [
-  { name: 'Domplein',         area: 'Binnenstad',     point: [5.12222, 52.09062] },
-  { name: 'Utrecht Centraal', area: 'Stationsgebied', point: [5.10999, 52.08949] },
-  { name: 'Neude',            area: 'Binnenstad',     point: [5.11862, 52.09329] },
-  { name: 'TivoliVredenburg', area: 'Vredenburgkade', point: [5.11282, 52.09230] },
-  { name: 'Jaarbeurs',        area: 'Croeselaan',     point: [5.10530, 52.08560] },
-  { name: 'Ledig Erf',        area: 'Zuid',           point: [5.12310, 52.07940] },
-  { name: 'Griftpark',        area: 'Noordoost',      point: [5.12660, 52.10050] },
-  { name: 'Wilhelminapark',   area: 'Oost',           point: [5.13450, 52.08370] },
-];
-
-/* The four rule cards from the design's "Welkom in Utrecht" screen. */
-const RULES = [
-  { title: 'Rijd op de rijbaan',
-    text: 'Op wegen waar je maximaal 50 km/u mag rijden, hoor je met een bromscooter op de rijbaan. Volg altijd de verkeersborden bij uitzonderingen.' },
-  { title: 'Let op wisselende rijzones',
-    text: 'Op sommige plekken gaat de route over in een verplicht fiets- of bromfietspad. De app waarschuwt je voordat de rijzone verandert.' },
-  { title: 'Snorscooters soms ook op de rijbaan',
-    text: 'Rijd je met een blauw kenteken? In grote delen van Utrecht moet je dan toch op de rijbaan rijden. Volg de blauwe routeborden langs de weg.' },
-  { title: 'Parkeren rond Utrecht Centraal',
-    text: 'Rond het stationsgebied mag je alleen parkeren in een aangewezen vak, rek of scooterstalling. Daarbuiten kan je scooter worden verwijderd.' },
-];
-
 /* ---------- app state ---------- */
 const state = {
   vehicle: 'snorfiets',   // contract value, goes into the API request as-is
-  start: CONFIG.start,    // rider position; geolocation may refresh this
+  city: CITIES[CONFIG.defaultCity],
+  start: CITIES[CONFIG.defaultCity].start,  // geolocation may refresh this
   destination: null,      // { name, point }
   route: null,            // normalized API response
   simulation: null,       // handles from startSimulation
@@ -64,12 +41,12 @@ async function init() {
   $('#btn-rules').addEventListener('click', openRules);
   if (!localStorage.getItem(RULES_SEEN_KEY)) openRules();
 
-  await map.initMap();
+  await map.initMap(state.city.center);
   map.setRider(state.start, 0);
 
   // Track C's zone rules go on immediately — they are the product.
   try {
-    map.drawZones(await loadRules());
+    map.drawZones(await loadRules(state.city.rulesUrl));
   } catch (e) {
     console.warn('Zones niet geladen:', e.message);
   }
@@ -91,23 +68,21 @@ async function init() {
 }
 
 /**
- * Uses the device position as the start point — but only when it
- * is actually near Utrecht. The zone rules and demo destinations
- * are Utrecht-only; planning a route from another city would walk
- * straight out of the dataset. Non-blocking: the app works fine
- * on the fallback position while (or if never) this resolves.
+ * Uses the device position as the start point when it falls inside
+ * a known city (cities.js), and switches the app to that city's
+ * dataset. Outside every known city we keep the default city's
+ * demo start: planning a route without rules or destinations for
+ * the area would demo nothing. Non-blocking: the app works fine
+ * on the fallback while (or if never) this resolves.
  */
 function tryGeolocation() {
   if (!('geolocation' in navigator)) return;
   navigator.geolocation.getCurrentPosition(
-    (pos) => {
+    async (pos) => {
       const here = [pos.coords.longitude, pos.coords.latitude];
-      const utrecht = [5.1214, 52.0907];
-      const offKm = Math.hypot(
-        (here[0] - utrecht[0]) * 68,       // ~km per degree lon at 52°N
-        (here[1] - utrecht[1]) * 111,      // ~km per degree lat
-      );
-      if (offKm > 10) return;              // not in Utrecht: keep the demo start
+      const city = cityFor(here);
+      if (!city) return;                 // unknown territory: keep the demo city
+      if (city !== state.city) await switchCity(city);
       state.start = here;
       map.setRider(here, 0);
       // Only recenter when the user isn't already doing something.
@@ -118,6 +93,19 @@ function tryGeolocation() {
     () => { /* denied or unavailable: fallback stays */ },
     { timeout: 5000, maximumAge: 60000 },
   );
+}
+
+/** Adopt another city's dataset: rules, destinations, zones. */
+async function switchCity(city) {
+  state.city = city;
+  state.start = city.start;
+  renderRules();
+  fillSuggestions($('#search-input').value);
+  try {
+    map.drawZones(await loadRules(city.rulesUrl));
+  } catch (e) {
+    console.warn('Zones niet geladen:', e.message);
+  }
 }
 
 /* ---------- panel switching ---------- */
@@ -131,20 +119,21 @@ function showPanel(id) {
 
 /* ---------- search ---------- */
 function fillSuggestions(filter) {
+  const all = state.city.destinations;
   const f = filter.trim().toLowerCase();
-  const list = DESTINATIONS.filter(d =>
+  const list = all.filter(d =>
     d.name.toLowerCase().includes(f) || d.area.toLowerCase().includes(f));
 
   $('#suggestions').innerHTML = list.length
     ? list.map(d => `
-      <button class="suggestion" data-i="${DESTINATIONS.indexOf(d)}">
+      <button class="suggestion" data-i="${all.indexOf(d)}">
         <span class="pin"><svg width="17" height="17" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10.5c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10.2" r="2.7"/></svg></span>
         <span><b>${d.name}</b><small>${d.area}</small></span>
       </button>`).join('')
     : '<p class="hint">Geen locatie gevonden. Of tik op de kaart.</p>';
 
   $('#suggestions').querySelectorAll('.suggestion').forEach(el =>
-    el.addEventListener('click', () => chooseDestination(DESTINATIONS[+el.dataset.i])));
+    el.addEventListener('click', () => chooseDestination(state.city.destinations[+el.dataset.i])));
 }
 
 /** Status line under the search field: loading / error feedback. */
@@ -162,7 +151,7 @@ async function chooseDestination(destination) {
   setSearchStatus('Route berekenen…');
 
   try {
-    state.route = await fetchRoute(state.start, destination.point, state.vehicle);
+    state.route = await fetchRoute(state.start, destination.point, state.vehicle, state.city);
   } catch (e) {
     setSearchStatus('Route ophalen mislukte: ' + e.message, true);
     showPanel('#panel-search');
@@ -177,6 +166,8 @@ async function chooseDestination(destination) {
   map.markArrival(null);
   map.frameRoute(r.route.coordinates);
 
+  $('#from-area').textContent = state.city.name;
+  $('#to-area').textContent = destination.area ?? state.city.name;
   $('#overview-destination').textContent = destination.name;
   $('#overview-distance').textContent = fmtDistance(r.afstand_m);
   $('#overview-time').textContent = fmtDuration(r.duur_s);
@@ -215,7 +206,7 @@ function startRide() {
 
 function endRide() {
   const r = state.route;
-  $('#done-destination').textContent = state.destination.name + ', Utrecht';
+  $('#done-destination').textContent = state.destination.name + ', ' + state.city.name;
   $('#done-distance').textContent = fmtDistance(r.afstand_m);
   $('#done-time').textContent = fmtDuration(r.duur_s);
   $('#done-warnings').textContent = r.waarschuwingen.length;
@@ -251,7 +242,7 @@ async function recalcRoute() {
   state.simulation?.stop();
   const from = state.lastStep?.point ?? state.start;
   try {
-    state.route = await fetchRoute(from, state.destination.point, state.vehicle);
+    state.route = await fetchRoute(from, state.destination.point, state.vehicle, state.city);
   } catch (e) {
     setSearchStatus('Route ophalen mislukte: ' + e.message, true);
     showPanel('#panel-search');
@@ -282,19 +273,20 @@ function hideZoneCard() {
   $('#zone-card').classList.add('hidden');
 }
 
-/* ---------- rules screen (Welkom in Utrecht) ---------- */
+/* ---------- rules screen (the design's Welkom-page) ---------- */
 function renderRules() {
-  $('#rules-list').innerHTML = RULES.map(r => `
+  $('#rules-list').innerHTML = state.city.rules.map(r => `
     <div class="rule-card">
       <span class="icon"><svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.2"/><path d="M12 16v-4.5M12 8h.01"/></svg></span>
       <div><h4>${r.title}</h4><p>${r.text}</p></div>
     </div>`).join('');
 }
 function openRules() {
+  $('#rules-title').textContent = 'Welkom in ' + state.city.name;
   // The intro line follows the chosen vehicle (plate color differs).
   $('#rules-sub').innerHTML = state.vehicle === 'bromfiets'
-    ? 'Je rijdt Utrecht binnen met een bromfiets met <u>geel kenteken</u>. Dit zijn de belangrijkste regels voor jouw voertuig.'
-    : 'Je rijdt Utrecht binnen met een snorfiets met <u>blauw kenteken</u>. Dit zijn de belangrijkste regels voor jouw voertuig.';
+    ? `Je rijdt ${state.city.name} binnen met een bromfiets met <u>geel kenteken</u>. Dit zijn de belangrijkste regels voor jouw voertuig.`
+    : `Je rijdt ${state.city.name} binnen met een snorfiets met <u>blauw kenteken</u>. Dit zijn de belangrijkste regels voor jouw voertuig.`;
   $('#rules-screen').classList.remove('hidden');
 }
 function closeRules() {

@@ -24,18 +24,21 @@ import { distanceM, lerp, distanceToLineM } from './geo.js';
  * @param {[number,number]} start   [lon, lat]
  * @param {[number,number]} end     [lon, lat]
  * @param {string} vehicle          'snorfiets' | 'bromfiets'
+ * @param {object} city             city entry from cities.js; the mock
+ *                                  needs its rulesUrl to fabricate the
+ *                                  warnings the real backend would give
  * @returns {Promise<{route:object, afstand_m:number, duur_s:number, waarschuwingen:Array}>}
  */
-export async function fetchRoute(start, end, vehicle) {
+export async function fetchRoute(start, end, vehicle, city) {
   const response = CONFIG.apiBase
     ? await fetchFromApi(start, end, vehicle)
-    : await mockRoute(start, end, vehicle);
+    : await mockRoute(start, end, vehicle, city);
   return normalize(response);
 }
 
-/** Loads the zone rules (track C's GeoJSON) for the map. */
-export async function loadRules() {
-  const res = await fetch(CONFIG.rulesUrl);
+/** Loads a city's zone rules (track C's GeoJSON) for the map. */
+export async function loadRules(rulesUrl) {
+  const res = await fetch(rulesUrl);
   if (!res.ok) throw new Error(`Regels laden mislukte (${res.status})`);
   return res.json();
 }
@@ -66,7 +69,7 @@ async function fetchFromApi(start, end, vehicle) {
  * rules: if the line passes close to a verboden or rijbaan rule,
  * you get the same warning the real backend would produce.
  */
-async function mockRoute(start, end, vehicle) {
+async function mockRoute(start, end, vehicle, city) {
   // Bend point: roughly east-west first, then north-south. Not real
   // routing — that's track B — but it reads like a street pattern.
   const bend = [end[0], start[1]];
@@ -81,7 +84,7 @@ async function mockRoute(start, end, vehicle) {
   // Warnings from the rule data, just like the contract promises.
   const waarschuwingen = [];
   try {
-    const rules = await loadRules();
+    const rules = await loadRules(city.rulesUrl);
     for (const f of rules.features) {
       if (f.properties.voertuig !== vehicle) continue;
       if (!['verboden', 'rijbaan'].includes(f.properties.regime)) continue;

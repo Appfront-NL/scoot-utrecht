@@ -23,13 +23,13 @@ let destinationMarker;
 let arrivalBadge;
 let warningMarkers = [];
 
-/** Mounts the map, resolves once the style has loaded. */
-export function initMap() {
+/** Mounts the map on the given center, resolves once loaded. */
+export function initMap(center) {
   return new Promise((done) => {
     map = new maplibregl.Map({
       container: 'map',
       style: CONFIG.mapStyle,
-      center: CONFIG.start,
+      center,
       zoom: 14.4,
       attributionControl: { compact: true },
     });
@@ -51,6 +51,11 @@ export function onMapClick(handler) {
  * so an uncertain rule also *looks* uncertain.
  */
 export function drawZones(geojson) {
+  // Re-drawing = city switch: just swap the data in place.
+  if (map.getSource('zones')) {
+    map.getSource('zones').setData(geojson);
+    return;
+  }
   map.addSource('zones', { type: 'geojson', data: geojson });
 
   map.addLayer({

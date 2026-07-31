@@ -8,6 +8,10 @@
 // The app will then call:
 //   GET {apiBase}/route?start=lon,lat&eind=lon,lat&voertuig=snorfiets
 // Don't forget CORS (Access-Control-Allow-Origin), see CONTRACT.md.
+//
+// City-specific things (center, rules dataset, destinations) do
+// NOT live here — see js/cities.js. Utrecht is the hackathon
+// example city; adding a city is one entry there.
 // ============================================================
 
 export const CONFIG = {
@@ -15,19 +19,14 @@ export const CONFIG = {
   // so track A stays demo-able without a backend.
   apiBase: null,
 
-  // Rider start position [lon, lat] — Oudegracht, Utrecht.
-  // TODO (later, not today): replace with real geolocation via
-  // navigator.geolocation, falling back to this point.
-  start: [5.11815, 52.09340],
+  // Which city the demo boots into when geolocation is off,
+  // denied, or points outside every known city.
+  defaultCity: 'utrecht',
 
   // Map style: OpenFreeMap "positron" — free, no API key, and
   // light so the route and zones stand out.
   // Alternatives: .../styles/bright or .../styles/liberty
   mapStyle: 'https://tiles.openfreemap.org/styles/positron',
-
-  // Zone rules as delivered by track C (see CONTRACT.md, section
-  // "Regeldata"). The app always draws these, mock mode included.
-  rulesUrl: 'mock/regels-utrecht.geojson',
 
   // Average speed for time estimates when the API omits duur_s:
   // 4.2 m/s ≈ 15 km/h (city speed for a snorfiets).

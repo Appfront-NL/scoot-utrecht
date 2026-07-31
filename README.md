@@ -48,6 +48,13 @@ python3 -m http.server 5173
 
 **Spoor B** is vrij in techniekkeuze. Enige eis: het antwoord volgt `CONTRACT.md` en er staat CORS open zodat de app hem kan aanroepen.
 
+## Steden
+
+Utrecht is de voorbeeldstad voor de hackathon, geen beperking. Alles wat stadsgebonden is
+(centrum, startpunt, regeldata, welkomstregels, demo-bestemmingen) staat in `js/cities.js`.
+Een stad toevoegen = één entry daar + een regels-GeoJSON in hetzelfde schema (`CONTRACT.md`).
+Met geolocatie aan schakelt de app automatisch naar de stad waar je bent, als die bekend is.
+
 ## Afspraken
 
 - Werk op een eigen branch en open een PR naar `main`.
