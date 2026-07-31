@@ -208,6 +208,10 @@ async function chooseDestination(destination) {
   if (error) { showNoRoute(error.message); return; }
   state.route = route;
 
+  // Everything below touches the map; if any of it throws (half-
+  // loaded deploy, map not ready) we fail visibly instead of
+  // leaving the calc panel hanging forever.
+  try {
   const r = state.route;
   finishCalcPanel(r.straten?.[0]);
   map.drawRoute(r.route);
@@ -224,6 +228,10 @@ async function chooseDestination(destination) {
   $('#overview-warnings').textContent = r.waarschuwingen.length;
   await pause(350);
   showPanel('#panel-overview');
+  } catch (e) {
+    console.error('Route tonen mislukte:', e);
+    showNoRoute('Er ging iets mis bij het tonen van de route. Probeer het opnieuw.');
+  }
 }
 
 /* "Route berekenen" loader (design 31): staged checklist that runs
