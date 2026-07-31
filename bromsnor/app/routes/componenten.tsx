@@ -65,6 +65,10 @@ function Blok({ titel, imp, children, hoog }: {
 /* Panels position fixed by default; inside the catalog we scope them
    to their preview box. */
 const scoped = `
+  /* scoot.css locks body scrolling for the fullscreen map app;
+     the catalog is a long document, so undo that here only. */
+  html, body { overflow: auto !important; height: auto !important; }
+
   .kit-scope .panel, .kit-scope .topbar, .kit-scope .float-stack,
   .kit-scope .nav-banner, .kit-scope .demo-speed, .kit-scope .app-toast,
   .kit-scope .auth-screen, .kit-scope .plate-screen,
