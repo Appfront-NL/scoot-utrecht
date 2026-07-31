@@ -44,6 +44,7 @@ const RULES = [
 /* ---------- app state ---------- */
 const state = {
   vehicle: 'snorfiets',   // contract value, goes into the API request as-is
+  start: CONFIG.start,    // rider position; geolocation may refresh this
   destination: null,      // { name, point }
   route: null,            // normalized API response
   simulation: null,       // handles from startSimulation
@@ -64,7 +65,7 @@ async function init() {
   if (!localStorage.getItem(RULES_SEEN_KEY)) openRules();
 
   await map.initMap();
-  map.setRider(CONFIG.start, 0);
+  map.setRider(state.start, 0);
 
   // Track C's zone rules go on immediately — they are the product.
   try {
@@ -85,6 +86,38 @@ async function init() {
   // Shareable URL: #eind=lon,lat&naam=… plans the route directly.
   const shared = readHash();
   if (shared) chooseDestination(shared);
+
+  tryGeolocation();
+}
+
+/**
+ * Uses the device position as the start point — but only when it
+ * is actually near Utrecht. The zone rules and demo destinations
+ * are Utrecht-only; planning a route from another city would walk
+ * straight out of the dataset. Non-blocking: the app works fine
+ * on the fallback position while (or if never) this resolves.
+ */
+function tryGeolocation() {
+  if (!('geolocation' in navigator)) return;
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const here = [pos.coords.longitude, pos.coords.latitude];
+      const utrecht = [5.1214, 52.0907];
+      const offKm = Math.hypot(
+        (here[0] - utrecht[0]) * 68,       // ~km per degree lon at 52°N
+        (here[1] - utrecht[1]) * 111,      // ~km per degree lat
+      );
+      if (offKm > 10) return;              // not in Utrecht: keep the demo start
+      state.start = here;
+      map.setRider(here, 0);
+      // Only recenter when the user isn't already doing something.
+      if (!$('#panel-search').classList.contains('hidden') && !state.route) {
+        map.overviewCamera(here);
+      }
+    },
+    () => { /* denied or unavailable: fallback stays */ },
+    { timeout: 5000, maximumAge: 60000 },
+  );
 }
 
 /* ---------- panel switching ---------- */
@@ -129,7 +162,7 @@ async function chooseDestination(destination) {
   setSearchStatus('Route berekenen…');
 
   try {
-    state.route = await fetchRoute(CONFIG.start, destination.point, state.vehicle);
+    state.route = await fetchRoute(state.start, destination.point, state.vehicle);
   } catch (e) {
     setSearchStatus('Route ophalen mislukte: ' + e.message, true);
     showPanel('#panel-search');
@@ -202,8 +235,8 @@ function newRoute() {
   state.lastStep = null;
   writeHash(null);
   map.clearRoute();
-  map.setRider(CONFIG.start, 0);
-  map.overviewCamera(CONFIG.start);
+  map.setRider(state.start, 0);
+  map.overviewCamera(state.start);
   showPanel('#panel-search');
 }
 
@@ -216,7 +249,7 @@ function newRoute() {
 async function recalcRoute() {
   hideZoneCard();
   state.simulation?.stop();
-  const from = state.lastStep?.point ?? CONFIG.start;
+  const from = state.lastStep?.point ?? state.start;
   try {
     state.route = await fetchRoute(from, state.destination.point, state.vehicle);
   } catch (e) {

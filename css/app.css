@@ -319,3 +319,11 @@ button{font-family:inherit;cursor:pointer}
   .panel{left:16px;right:16px;bottom:16px;border-radius:var(--radius-panel)}
   .nav-banner,.zone-card{max-width:452px;margin:0 auto}
 }
+
+/* narrow phones (≤400px): icon-only brand chip so the topbar
+   never wraps — measured: full topbar needs 375px otherwise */
+@media (max-width:400px){
+  .brand{padding:8px}
+  .brand-name{display:none}
+  .vehicle-option{padding:8px 10px;font-size:12.5px}
+}
