@@ -53,6 +53,7 @@ export const CITIES = {
       { name: 'Wilhelminapark',   area: 'Oost',           point: [5.13450, 52.08370] },
       { name: 'Griftpark',        area: 'Noordoost',      point: [5.12660, 52.10050] },
       { name: 'Kinderboerderij',  area: 'Mini-geitjes',   point: [5.13060, 52.09850] },
+      { name: 'De Cube',          area: 'Vandaag helaas gereserveerd', point: [5.11350, 52.08420] },
     ],
   },
 

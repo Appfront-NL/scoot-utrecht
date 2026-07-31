@@ -67,7 +67,7 @@ const ICONS = {
 const RIDES = [
   { date: "Vandaag 13:35", route: "Oudegracht → Domplein", meta: "2,3 km · 8 min" },
   { date: "Gisteren 09:12", route: "Vredenburg → Rijnsweerd", meta: "5,8 km · 19 min", warn: "1 waarschuwing" },
-  { date: "Vrijdag 16:04", route: "Kantoor → Café Thijssen", meta: "1,9 km · 7 min" },
+  { date: "Vrijdag 16:04", route: "Kantoor → Café Thijssen", meta: "1,9 km · 7 min", warn: "Blikkendag" },
   { date: "28 juli 18:40", route: "Domplein → Utrecht Centraal", meta: "3,1 km · 11 min", warn: "3 min omgeleid · ganzendemonstratie" },
   { date: "27 juli 08:05", route: "Jaarbeurs → Wilhelminapark", meta: "4,2 km · 14 min", warn: "2 waarschuwingen" },
   { date: "26 juli 17:22", route: "Neude → Oudegracht", meta: "1,7 km · 6 min" },
@@ -86,8 +86,11 @@ const NOTIFICATIONS = [
   { title: "Je SCOOT Wrapped staat klaar", time: "1 d", body: "Bekijk hoeveel je dit jaar door Utrecht reed.", unread: true, wrapped: true },
   { title: "Venstertijd gewijzigd", time: "3 d", body: "De Steenweg is voortaan ook op zaterdag gesloten van 11:00 tot 18:00." },
   { title: "Kaart bijgewerkt", time: "1 w", body: "340 verkeersbesluiten opnieuw ingelezen." },
-  { title: "Vergeet niet je ritten te schrijven", time: "vr 15:00", body: "Wekelijkse herinnering. Je weet waarom." },
-  { title: "Geplande rit wacht", time: "9 mnd", body: "Poldersport Uithoorn staat nog in je agenda. Ooit gaan we echt." },
+  { title: "Vergeet niet je uren te schrijven", time: "vr 15:00", body: "Oh wacht, verkeerde app. Maar nu je er toch bent." },
+  { title: "Ganzenprotest op de Oudegracht", time: "2 d", body: "\u201cEerlijke korrels, geen dwangvoeding.\u201d De route houdt vandaag wat afstand van het water." },
+  { title: "Blikkendag", time: "vr 16:00", body: "Terrasroute naar Caf\u00e9 Thijssen staat voor je klaar." },
+  { title: "Regen op komst", time: "3 u", body: "Schuilbruggen langs je route gemarkeerd. Buienradar zei droog. Ja ja." },
+  { title: "Geplande rit wacht", time: "9 mnd", body: "Poldersport Uithoorn staat nog steeds in je agenda. Ooit gaan we echt." },
 ];
 
 const EARNED = [
@@ -97,6 +100,7 @@ const EARNED = [
 ];
 
 const QUESTS = [
+  { icon: ICONS.map, title: "Kylian Mbappfront", sub: "Winnaar van de Saai Bedrijf Scooterpoule", count: "1/1", pct: 100 },
   { icon: ICONS.clock, title: "De Pakketjeswachter", sub: "Ritten uitgesteld omdat er nog een pakketje kwam", count: "12/15", pct: 80 },
   { icon: ICONS.moon, title: "Nachtbraker", sub: "25 ritten na 22:00 uur", count: "18/25", pct: 72 },
   { icon: ICONS.map, title: "Stratenmaker", sub: "200 verschillende straten gereden", count: "143/200", pct: 71.5 },
@@ -402,7 +406,7 @@ function onClick(event) {
     closeAll();
     if (hooks.onOpenWrapped) hooks.onOpenWrapped();
   } else if (action === "pay") {
-    toast("Demo");
+    toast("Geld is maar een sociaal construct.");
   } else if (action === "decree") {
     event.preventDefault();
     toast("Opent het Gemeenteblad");
