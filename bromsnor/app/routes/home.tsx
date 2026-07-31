@@ -36,7 +36,12 @@ export default function Map() {
 
       const L = (await import("leaflet")).default;
       leafletRef.current = L;
+      leafletRef.current = L;
 
+      mapInstanceRef.current = L.map(mapRef.current).setView(
+        [52.0907, 5.1214],
+        13,
+      );
       mapInstanceRef.current = L.map(mapRef.current).setView(
         [52.0907, 5.1214],
         13,
@@ -72,6 +77,10 @@ export default function Map() {
     void initMap();
 
     return () => {
+      if (mapInstanceRef.current) mapInstanceRef.current.remove();
+      mapInstanceRef.current = null;
+      startMarkerRef.current = null;
+      endMarkerRef.current = null;
       if (mapInstanceRef.current) mapInstanceRef.current.remove();
       mapInstanceRef.current = null;
       startMarkerRef.current = null;
@@ -248,31 +257,34 @@ export default function Map() {
   if (!TOMTOM_KEY) {
     return (
       <div className="flex h-100 w-full items-center justify-center rounded-lg border border-dashed text-sm text-gray-500">
-        Set NEXT_PUBLIC_TOMTOM_API_KEY to load the TomTom map.
-      </div>
-    );
+        <div className="flex h-100 w-full items-center justify-center rounded-lg border border-dashed text-sm text-gray-500">
+          Set NEXT_PUBLIC_TOMTOM_API_KEY to load the TomTom map.
+        </div>
+        );
   }
 
-  const now = new Date();
-  const timeLabel = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
+        const now = new Date();
+        const timeLabel = `${now.getHours()}:${String(now.getMinutes()).padStart(2, "0")}`;
 
-  /* ---------- render ---------- */
-  return (
-    <div className="h-screen w-screen">
-      <div className="h-full w-full relative">
-        <div ref={mapRef} className="h-full w-full rounded-lg" />
-        <MapControls
-          from={from}
-          to={to}
-          setTo={setTo}
-          setFrom={setFrom}
-          drawRoute={drawRoute}
-          routeError={routeError}
-          routeDrawn={routeDrawn}
-          setRouteDrawn={setRouteDrawn}
-          distance={directDistanceInKm}
-        />
-      </div>
-    </div>
-  );
+        /* ---------- render ---------- */
+        return (
+        <div className="h-screen w-screen">
+          <div className="h-full w-full relative">
+            <div className="h-screen w-screen">
+              <div className="h-full w-full relative">
+                <div ref={mapRef} className="h-full w-full rounded-lg" />
+                <MapControls
+                  from={from}
+                  to={to}
+                  setTo={setTo}
+                  setFrom={setFrom}
+                  drawRoute={drawRoute}
+                  routeError={routeError}
+                  routeDrawn={routeDrawn}
+                  setRouteDrawn={setRouteDrawn}
+                  distance={directDistanceInKm}
+                />
+              </div>
+            </div>
+            );
 }
