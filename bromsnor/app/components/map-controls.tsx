@@ -54,11 +54,18 @@ function MapControls({
             className={`absolute left-0 bottom-0 z-1000 ${routeDrawn ? (showDirectionsControls ? "h-30" : "h-50") : "h-70"} w-screen rounded-lg bg-white/95 shadow-md rounded-t-2xl border-t border-t-gray-300 px-6 py-4`}
         >
             <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-                {routeDrawn && showDirectionsControls && (
+                {routeDrawn && (
                     <div className="absolute bottom-[50%] right-1 flex h-full flex-col items-center justify-center gap-1 p-2 text-center">
                         <button
                             type="button"
-                            onClick={() => setShowDirectionsControls(!showDirectionsControls)}
+                            onClick={() => {
+                                if (showDirectionsControls) {
+                                    setShowDirectionsControls(false);
+                                } else {
+                                    setRouteDrawn(false);
+                                    setTo("");
+                                }
+                            }}
 
                             className="mx-auto rounded-full bg-[#FEE2E2] px-2 py-1 text-[14px] text-[#B91C1C] focus:outline-none focus:ring-2 focus:ring-[#FEE2E2] focus:ring-offset-2"
                         >

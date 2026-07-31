@@ -1,5 +1,5 @@
 import "leaflet/dist/leaflet.css";
-import { MapPin, Scooter } from "lucide-react";
+import { MapPin, Scooter, User2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { DirectionsControls } from "~/components/directions-controls";
@@ -18,6 +18,8 @@ export default function Map() {
   const routeLayerRef = useRef<any>(null);
   const startMarkerRef = useRef<any>(null);
   const endMarkerRef = useRef<any>(null);
+  const currentLocationMarkerRef = useRef<any>(null);
+  const currentLocationRef = useRef<{ lat: number; lng: number } | null>(null);
   const [showDirectionsControls, setShowDirectionsControls] = useState(true);
 
   const [routeDrawn, setRouteDrawn] = useState(false);
@@ -38,6 +40,42 @@ export default function Map() {
   const [routeError, setRouteError] = useState<string | null>(null);
 
   useEffect(() => {
+    const pinCurrentLocation = () => {
+      const mapInstance = mapInstanceRef.current;
+      const L = leafletRef.current;
+      const currentLocation = currentLocationRef.current;
+
+      if (!mapInstance || !L || !currentLocation) return;
+
+      if (currentLocationMarkerRef.current) {
+        mapInstance.removeLayer(currentLocationMarkerRef.current);
+      }
+
+      const createLucideMarkerIcon = (icon: React.ReactNode) =>
+        L.divIcon({
+          className: "",
+          html: renderToStaticMarkup(<div>{icon}</div>),
+          iconSize: [28, 28],
+          iconAnchor: [14, 28],
+          popupAnchor: [0, -28],
+        });
+
+      currentLocationMarkerRef.current = L.marker([
+        currentLocation.lat,
+        currentLocation.lng,
+      ])
+        .setIcon(
+          createLucideMarkerIcon(
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-[#3B82F6] border border-[#3B82F6]">
+              <User2 color="white" size={18} strokeWidth={2} />
+            </div>,
+          ),
+        )
+        .addTo(mapInstance)
+        .bindPopup("Laten we brommen")
+        .openPopup();
+    };
+
     const initMap = async () => {
       if (!mapRef.current || !TOMTOM_KEY || mapInstanceRef.current) return;
 
@@ -67,6 +105,12 @@ export default function Map() {
           },
         ).addTo(mapInstanceRef.current);
 
+        mapInstanceRef.current.whenReady(() => {
+          setTimeout(() => {
+            mapInstanceRef.current?.invalidateSize();
+          }, 0);
+        });
+
         forbiddenZonesBoundingBoxes.forEach((item) => {
           item.warning.forEach((warning) => {
             warning.bbox.forEach((zone) => {
@@ -84,11 +128,9 @@ export default function Map() {
               ).addTo(mapInstanceRef.current);
             });
           });
-
-          setTimeout(() => {
-            mapInstanceRef.current?.invalidateSize();
-          }, 0);
         });
+
+        pinCurrentLocation();
       } catch {
         setRouteError("Could not initialize map.");
       }
@@ -100,6 +142,11 @@ export default function Map() {
       navigator.geolocation.getCurrentPosition(
         async ({ coords }) => {
           const currentLocation = `${coords.latitude}, ${coords.longitude}`;
+          currentLocationRef.current = {
+            lat: coords.latitude,
+            lng: coords.longitude,
+          };
+          pinCurrentLocation();
 
           try {
             const url = `https://api.tomtom.com/search/2/reverseGeocode/${coords.latitude},${coords.longitude}.json?key=${TOMTOM_KEY}`;
@@ -138,6 +185,8 @@ export default function Map() {
       mapInstanceRef.current = null;
       startMarkerRef.current = null;
       endMarkerRef.current = null;
+      currentLocationMarkerRef.current = null;
+      currentLocationRef.current = null;
       routeLayerRef.current = null;
       leafletRef.current = null;
     };

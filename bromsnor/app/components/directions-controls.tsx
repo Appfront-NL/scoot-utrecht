@@ -223,7 +223,7 @@ export function DirectionsControls({
     const isWarning = instructions[0]?.includes("Warning") ?? false;
 
     return (
-        <div className="absolute right-4 top-4 z-1000 max-h-[50vh] w-[min(90vw,360px)] overflow-y-auto rounded-lg bg-white border border-[#E2E8F0] p-4">
+        <div className="absolute right-4 top-[10%] z-1000 max-h-[50vh] w-[min(90vw,360px)] overflow-y-auto rounded-lg bg-white border border-[#E2E8F0] p-4">
             <div className="grid grid-cols-[auto_1fr] items-start gap-3">
                 {isWarning ? (
                     <MessageSquareWarning
