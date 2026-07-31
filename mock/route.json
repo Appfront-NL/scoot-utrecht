@@ -1,0 +1,59 @@
+{
+  "route": {
+    "type": "LineString",
+    "coordinates": [
+      [5.11542, 52.09285],
+      [5.11618, 52.09112],
+      [5.11704, 52.08946],
+      [5.11833, 52.08871],
+      [5.12043, 52.08842],
+      [5.12162, 52.08795],
+      [5.12211, 52.08702],
+      [5.12262, 52.08611],
+      [5.12375, 52.08578],
+      [5.12518, 52.08561],
+      [5.12604, 52.08594],
+      [5.12661, 52.08668]
+    ]
+  },
+  "afstand_m": 2290,
+  "duur_s": 480,
+  "waarschuwingen": [
+    {
+      "bij": [5.11833, 52.08871],
+      "tekst": "Verboden zone: voetgangersgebied Oudegracht",
+      "type": "verboden"
+    },
+    {
+      "bij": [5.12375, 52.08578],
+      "tekst": "Stapvoets rijden rond Domplein",
+      "type": "stapvoets"
+    }
+  ],
+  "zones": [
+    {
+      "type": "verboden",
+      "naam": "Voetgangersgebied Oudegracht",
+      "polygon": {
+        "type": "Polygon",
+        "coordinates": [[[5.11466, 52.08931], [5.11812, 52.08902], [5.11856, 52.08791], [5.11498, 52.08815], [5.11466, 52.08931]]]
+      }
+    },
+    {
+      "type": "stapvoets",
+      "naam": "Domplein en omgeving",
+      "polygon": {
+        "type": "Polygon",
+        "coordinates": [[[5.12228, 52.08652], [5.12742, 52.08618], [5.12781, 52.08498], [5.12266, 52.08528], [5.12228, 52.08652]]]
+      }
+    },
+    {
+      "type": "toegestaan",
+      "naam": "Doorgaande route Catharijnesingel",
+      "polygon": {
+        "type": "Polygon",
+        "coordinates": [[[5.11338, 52.09342], [5.11742, 52.09308], [5.11828, 52.08948], [5.11412, 52.08978], [5.11338, 52.09342]]]
+      }
+    }
+  ]
+}
