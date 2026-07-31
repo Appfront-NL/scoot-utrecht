@@ -2,6 +2,7 @@ import "leaflet/dist/leaflet.css";
 import { MapPin, Scooter } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { DirectionsControls } from "~/components/directions-controls";
 import MapControls from "~/components/map-controls";
 import {
   type IWarningBoundingBox,
@@ -9,7 +10,6 @@ import {
 } from "~/utils/load-bounding-boxes";
 
 const TOMTOM_KEY = "dwpTmdTaUwbmhSEGpbxbrT0L0E71O9aX";
-const DIRECTIONS_API_URL = "/api/directions";
 
 export default function Map() {
   const mapRef = useRef<HTMLDivElement | null>(null);
@@ -23,7 +23,7 @@ export default function Map() {
   const [directDistanceInKm, setDirectDistanceInKm] = useState<number | null>(
     null,
   );
-  const [directions, setDirections] = useState<string[]>([]);
+  const [points, setPoints] = useState<[[number, number]]>([[0, 0]]);
   const [arrivalTime, setArrivalTime] = useState<string | null>(null);
   const [travelTimeInMinutes, setTravelTimeInMinutes] = useState<number | null>(
     null,
@@ -202,46 +202,8 @@ export default function Map() {
     return earthRadius * c;
   };
 
-  const fetchDirectionsFromNewApi = async (
-    start: { lat: number; lng: number },
-    end: { lat: number; lng: number },
-  ) => {
-    try {
-      const params = new URLSearchParams({
-        startLat: String(start.lat),
-        startLng: String(start.lng),
-        endLat: String(end.lat),
-        endLng: String(end.lng),
-      });
-
-      const response = await fetch(
-        `${DIRECTIONS_API_URL}?${params.toString()}`,
-      );
-      if (!response.ok) return [];
-
-      const data = await response.json();
-
-      if (Array.isArray(data?.directions)) {
-        return data.directions.filter((message: unknown) =>
-          Boolean(typeof message === "string" && message),
-        ) as string[];
-      }
-
-      if (Array.isArray(data?.instructions)) {
-        return data.instructions
-          .map((instruction: any) => instruction?.message)
-          .filter((message: string | undefined) => Boolean(message));
-      }
-
-      return [];
-    } catch {
-      return [];
-    }
-  };
-
   const drawRoute = async () => {
     setRouteError(null);
-    setDirections([]);
     const mapInstance = mapInstanceRef.current;
     const L = leafletRef.current;
 
@@ -319,6 +281,7 @@ export default function Map() {
       const data = await response.json();
       const points =
         data?.routes?.[0]?.legs?.flatMap((leg: any) => leg.points) ?? [];
+      setPoints(points.map((p: any) => [p.latitude, p.longitude]));
 
       console.log("Route points:", points);
       console.log("Route data:", data);
@@ -335,22 +298,6 @@ export default function Map() {
         setRouteDrawn(false);
         return;
       }
-
-      const fallbackInstructions =
-        data?.routes?.[0]?.guidance?.instructions ?? [];
-      const fallbackDirections = fallbackInstructions
-        .map((instruction: any) => instruction?.message)
-        .filter((message: string | undefined) => Boolean(message));
-
-      const parsedDirections = await fetchDirectionsFromNewApi(start, end);
-
-      setDirections(
-        parsedDirections.length ? parsedDirections : fallbackDirections,
-      );
-      console.log(
-        "Directions:",
-        parsedDirections.length ? parsedDirections : fallbackDirections,
-      );
 
       const latLngs = points.map((p: any) => [p.latitude, p.longitude]);
 
@@ -370,7 +317,6 @@ export default function Map() {
     } catch {
       setRouteError("Could not draw route.");
       setRouteDrawn(false);
-      setDirections([]);
     }
   };
 
@@ -386,18 +332,12 @@ export default function Map() {
     <div className="h-screen w-screen">
       <div className="h-full w-full relative">
         <div ref={mapRef} className="h-full w-full rounded-lg" />
-        {routeDrawn && directions.length > 0 && (
-          <div className="absolute right-4 top-4 z-1000 max-h-[40vh] w-[min(90vw,360px)] overflow-y-auto rounded-lg bg-white/95 p-3 shadow-lg">
-            <h3 className="mb-2 text-sm font-semibold text-gray-900">
-              Directions
-            </h3>
-            <ol className="list-decimal space-y-1 pl-4 text-xs text-gray-700">
-              {directions.map((direction, index) => (
-                <li key={`${index}-${direction}`}>{direction}</li>
-              ))}
-            </ol>
-          </div>
-        )}
+        <DirectionsControls
+          from={from}
+          to={to}
+          routeDrawn={routeDrawn}
+          routeCoordinates={points}
+        />
         <MapControls
           from={from}
           to={to}
