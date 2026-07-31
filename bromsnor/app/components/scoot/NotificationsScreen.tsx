@@ -16,6 +16,7 @@
  */
 
 import { useNavigate } from "react-router";
+import { useWrapped } from "./hooks";
 
 const backIcon = (
   <svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
@@ -111,5 +112,6 @@ export async function loader() {
 
 export default function NotificationsPage() {
   const navigate = useNavigate();
-  return <NotificationsScreen onBack={() => navigate(-1)} />;
+  const wrapped = useWrapped();
+  return <NotificationsScreen onBack={() => navigate(-1)} onWrapped={wrapped.open} />;
 }
