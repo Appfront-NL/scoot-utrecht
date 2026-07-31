@@ -22,6 +22,7 @@ export default function Map() {
   const [directDistanceInKm, setDirectDistanceInKm] = useState<number | null>(
     null,
   );
+  const [directions, setDirections] = useState<string[]>([]);
 
   const forbiddenZonesBoundingBoxes: IWarningBoundingBox =
     loadForbiddenZonesBoundingBoxes();
@@ -85,7 +86,40 @@ export default function Map() {
       }
     };
 
+    const setStartToCurrentLocation = () => {
+      if (!navigator.geolocation) return;
+
+      navigator.geolocation.getCurrentPosition(
+        async ({ coords }) => {
+          const currentLocation = `${coords.latitude}, ${coords.longitude}`;
+
+          try {
+            const url = `https://api.tomtom.com/search/2/reverseGeocode/${coords.latitude},${coords.longitude}.json?key=${TOMTOM_KEY}`;
+            const response = await fetch(url);
+            const data = response.ok ? await response.json() : null;
+            const address = data?.addresses?.[0]?.address?.freeformAddress;
+            setFrom(address || currentLocation);
+          } catch {
+            setFrom(currentLocation);
+          }
+
+          mapInstanceRef.current?.setView(
+            [coords.latitude, coords.longitude],
+            15,
+          );
+        },
+        () => {
+          // Ignore geolocation errors and keep default start value.
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+        },
+      );
+    };
+
     void initMap();
+    setStartToCurrentLocation();
 
     const onResize = () => mapInstanceRef.current?.invalidateSize();
     window.addEventListener("resize", onResize);
@@ -165,6 +199,7 @@ export default function Map() {
 
   const drawRoute = async () => {
     setRouteError(null);
+    setDirections([]);
     const mapInstance = mapInstanceRef.current;
     const L = leafletRef.current;
 
@@ -182,12 +217,14 @@ export default function Map() {
       setRouteError(
         "Enter valid coordinates (lat,lng) or searchable addresses.",
       );
+      setRouteDrawn(false);
       return;
     }
 
     const directDistanceInKm = getDistanceInKm(start, end);
     if (directDistanceInKm < 0.025) {
       setRouteError("Start and end are too close together.");
+      setRouteDrawn(false);
       return;
     }
     setDirectDistanceInKm(directDistanceInKm);
@@ -240,11 +277,19 @@ export default function Map() {
       const data = await response.json();
       const points =
         data?.routes?.[0]?.legs?.flatMap((leg: any) => leg.points) ?? [];
+      const instructions = data?.routes?.[0]?.guidance?.instructions ?? [];
 
       if (!points.length) {
         setRouteError("No route found.");
+        setRouteDrawn(false);
         return;
       }
+
+      const parsedDirections = instructions
+        .map((instruction: any) => instruction?.message)
+        .filter((message: string | undefined) => Boolean(message));
+
+      setDirections(parsedDirections);
 
       const latLngs = points.map((p: any) => [p.latitude, p.longitude]);
 
@@ -264,6 +309,7 @@ export default function Map() {
     } catch {
       setRouteError("Could not draw route.");
       setRouteDrawn(false);
+      setDirections([]);
     }
   };
 
@@ -280,6 +326,18 @@ export default function Map() {
     <div className="h-screen w-screen">
       <div className="h-full w-full relative">
         <div ref={mapRef} className="h-full w-full rounded-lg" />
+        {routeDrawn && directions.length > 0 && (
+          <div className="absolute right-4 top-4 z-[1000] max-h-[40vh] w-[min(90vw,360px)] overflow-y-auto rounded-lg bg-white/95 p-3 shadow-lg">
+            <h3 className="mb-2 text-sm font-semibold text-gray-900">
+              Directions
+            </h3>
+            <ol className="list-decimal space-y-1 pl-4 text-xs text-gray-700">
+              {directions.map((direction, index) => (
+                <li key={`${index}-${direction}`}>{direction}</li>
+              ))}
+            </ol>
+          </div>
+        )}
         <MapControls
           from={from}
           to={to}
