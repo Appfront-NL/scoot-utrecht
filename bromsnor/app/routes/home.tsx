@@ -3,6 +3,10 @@ import { MapPin, Scooter } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import MapControls from "~/components/map-controls";
+import {
+  type IWarningBoundingBox,
+  loadForbiddenZonesBoundingBoxes,
+} from "~/utils/load-bounding-boxes";
 
 const TOMTOM_KEY = "dwpTmdTaUwbmhSEGpbxbrT0L0E71O9aX";
 
@@ -14,14 +18,13 @@ export default function Map() {
   const startMarkerRef = useRef<any>(null);
   const endMarkerRef = useRef<any>(null);
 
-  const forbiddenZonesBoundingBoxes = [
-    {
-      minLat: 52.0907,
-      maxLat: 52.0917,
-      minLng: 5.1214,
-      maxLng: 5.1224,
-    },
-  ];
+  const [routeDrawn, setRouteDrawn] = useState(false);
+  const [directDistanceInKm, setDirectDistanceInKm] = useState<number | null>(
+    null,
+  );
+
+  const forbiddenZonesBoundingBoxes: IWarningBoundingBox =
+    loadForbiddenZonesBoundingBoxes();
 
   const [from, setFrom] = useState("Westerdoksdijk 599, 1013 BX Amsterdam");
   const [to, setTo] = useState("");
@@ -48,19 +51,21 @@ export default function Map() {
         },
       ).addTo(mapInstanceRef.current);
 
-      forbiddenZonesBoundingBoxes.forEach((zone) => {
-        L.rectangle(
-          [
-            [zone.minLat, zone.minLng],
-            [zone.maxLat, zone.maxLng],
-          ],
-          {
-            color: "#DC2626",
-            weight: 2,
-            fillColor: "#DC2626",
-            fillOpacity: 0.2,
-          },
-        ).addTo(mapInstanceRef.current);
+      forbiddenZonesBoundingBoxes.warnings.forEach((warning) => {
+        warning.bbox.forEach((zone) => {
+          L.rectangle(
+            [
+              [zone.minLat, zone.minLng],
+              [zone.maxLat, zone.maxLng],
+            ],
+            {
+              color: "#DC2626",
+              weight: 2,
+              fillColor: "#DC2626",
+              fillOpacity: 0.2,
+            },
+          ).addTo(mapInstanceRef.current);
+        });
       });
     };
 
@@ -116,6 +121,26 @@ export default function Map() {
     return geocodeAddress(value);
   };
 
+  const getDistanceInKm = (
+    start: { lat: number; lng: number },
+    end: { lat: number; lng: number },
+  ) => {
+    const toRad = (value: number) => (value * Math.PI) / 180;
+    const earthRadius = 6371;
+    const dLat = toRad(end.lat - start.lat);
+    const dLng = toRad(end.lng - start.lng);
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(start.lat)) *
+      Math.cos(toRad(end.lat)) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return earthRadius * c;
+  };
+
   const drawRoute = async () => {
     setRouteError(null);
     const mapInstance = mapInstanceRef.current;
@@ -137,6 +162,13 @@ export default function Map() {
       );
       return;
     }
+
+    const directDistanceInKm = getDistanceInKm(start, end);
+    if (directDistanceInKm < 0.025) {
+      setRouteError("Start and end are too close together.");
+      return;
+    }
+    setDirectDistanceInKm(directDistanceInKm);
 
     if (startMarkerRef.current) {
       mapInstance.removeLayer(startMarkerRef.current);
@@ -177,7 +209,7 @@ export default function Map() {
       .addTo(mapInstance)
       .bindPopup("End");
 
-    const url = `https://api.tomtom.com/routing/1/calculateRoute/${start.lat},${start.lng}:${end.lat},${end.lng}/json?key=${TOMTOM_KEY}`;
+    const url = `https://api.tomtom.com/routing/1/calculateRoute/${start.lat},${start.lng}:${end.lat},${end.lng}/json?key=${TOMTOM_KEY}&travelMode=${"car"}`;
 
     try {
       const response = await fetch(url);
@@ -206,8 +238,10 @@ export default function Map() {
       mapInstance.fitBounds(routeLayerRef.current.getBounds(), {
         padding: [24, 24],
       });
+      setRouteDrawn(true);
     } catch {
       setRouteError("Could not draw route.");
+      setRouteDrawn(false);
     }
   };
 
@@ -230,16 +264,14 @@ export default function Map() {
         <MapControls
           from={from}
           to={to}
-          setFrom={setFrom}
           setTo={setTo}
+          setFrom={setFrom}
           drawRoute={drawRoute}
           routeError={routeError}
+          routeDrawn={routeDrawn}
+          setRouteDrawn={setRouteDrawn}
+          distance={directDistanceInKm}
         />
-        {routeError && (
-          <div className="absolute left-0 bottom-0 z-1000 w-full rounded-lg bg-red-100 p-3 text-sm text-red-700">
-            {routeError}
-          </div>
-        )}
       </div>
     </div>
   );
